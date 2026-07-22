@@ -1,0 +1,14 @@
+﻿{
+  "id": "ThrowRockIronclad",
+  "name": "돌머리 아이언클래드",
+  "author": "s_twkim991",
+  "description": "쓸모없던 아이언클래드 카드들을 바위 시너지 덱으로 재구성합니다.",
+  "version": "v0.1.0-dev",
+  "min_game_version": "0.107.1",
+  "has_pck": true,
+  "has_dll": true,
+  "dependencies": [
+    {"id": "BaseLib", "min_version": "3.3.8"}
+  ],
+  "affects_gameplay": true
+}

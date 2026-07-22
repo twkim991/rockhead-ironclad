@@ -1,0 +1,82 @@
+# Godot-generated cache and imported resources
+.godot/
+.mono/
+.import/
+
+# Local SDKs, tools, and machine-specific paths
+.tools/
+Directory.Build.props
+local.props
+*.local.props
+
+# .NET build and publish outputs
+[Bb]in/
+[Oo]bj/
+/publish/
+TestResults/
+*.dll
+*.pdb
+*.deps.json
+*.runtimeconfig.json
+*.pck
+*.nupkg
+*.snupkg
+
+# Generated test output
+/tests/artifacts/
+coverage/
+coverage.*
+*.coverage
+*.coveragexml
+
+# Game files, decompiled sources, and local reference material
+# Do not redistribute Slay the Spire 2 assemblies or extracted game content.
+SOURCES/
+decompiled/
+game-reference/
+reference-assemblies/
+
+# SteamCMD and Workshop upload staging
+.steamcmd/
+steamcmd/
+workshop/staging/
+workshop_build_item.local.vdf
+
+# IDE and editor user state
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# Logs, crash dumps, and temporary files
+logs/
+*.log
+*.dmp
+*.tmp
+*.temp
+*.bak
+*.swp
+*.orig
+tmp/
+temp/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+secrets.json
+appsettings.Development.json
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/

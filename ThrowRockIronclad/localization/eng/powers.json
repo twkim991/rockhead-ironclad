@@ -1,0 +1,14 @@
+{
+  "THROWROCKIRONCLAD-ROCKADE_POWER.title": "Rockade",
+  "THROWROCKIRONCLAD-ROCKADE_POWER.description": "At the end of your turn, gain {Amount} Block for each Giant Rock played this combat.",
+  "THROWROCKIRONCLAD-ROCKADE_POWER.smartDescription": "At the end of your turn, gain {Amount} Block for each Giant Rock played this combat.",
+  "THROWROCKIRONCLAD-ROCK_FORM_POWER.title": "Rock Form",
+  "THROWROCKIRONCLAD-ROCK_FORM_POWER.description": "At the start of each turn, add Giant Rocks to your hand. Rock cards cost less.",
+  "THROWROCKIRONCLAD-ROCK_FORM_POWER.smartDescription": "At the start of each turn, add Giant Rocks to your hand. Rock cards cost less.",
+  "THROWROCKIRONCLAD-ROCK_ARMOR_POWER.title": "Rock Armor",
+  "THROWROCKIRONCLAD-ROCK_ARMOR_POWER.description": "Whenever you play a Giant Rock, gain {Amount} Block.",
+  "THROWROCKIRONCLAD-ROCK_ARMOR_POWER.smartDescription": "Whenever you play a Giant Rock, gain {Amount} Block.",
+  "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.title": "Absolute Rock",
+  "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.description": "Giant Rocks deal {Amount} additional damage.",
+  "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.smartDescription": "Giant Rocks deal {Amount} additional damage."
+}

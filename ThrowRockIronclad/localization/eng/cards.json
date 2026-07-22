@@ -1,0 +1,12 @@
+{
+  "THROW_ROCK_IRONCLAD_CARD_ROCKADE.title": "Rockade",
+  "THROW_ROCK_IRONCLAD_CARD_ROCKADE.description": "At the end of your turn, gain {Block:diff()} Block for each Giant Rock played this combat.",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_FORM.title": "Rock Form",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_FORM.description": "At the start of each turn, add a {IfUpgraded:show:Giant Rock+|Giant Rock} to your hand. Rock cards cost 1 less.",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_ARMOR.title": "Rock Armor",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_ARMOR.description": "Whenever you play a Giant Rock, gain {Block:diff()} Block.",
+  "THROW_ROCK_IRONCLAD_CARD_ABSOLUTE_ROCK.title": "Absolute Rock",
+  "THROW_ROCK_IRONCLAD_CARD_ABSOLUTE_ROCK.description": "Giant Rocks deal {ExtraDamage:diff()} additional damage.",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM.title": "Rock Slam",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM.description": "Deal {Damage:diff()} damage. Add a Giant Rock to your discard pile. Exhaust."
+}

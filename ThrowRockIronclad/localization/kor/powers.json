@@ -1,0 +1,14 @@
+{
+  "THROWROCKIRONCLAD-ROCKADE_POWER.title": "바위케이드",
+  "THROWROCKIRONCLAD-ROCKADE_POWER.description": "턴 종료 시, 이번 전투에서 사용한 거대한 바위 하나당 방어도를 {Amount} 얻습니다.",
+  "THROWROCKIRONCLAD-ROCKADE_POWER.smartDescription": "턴 종료 시, 이번 전투에서 사용한 거대한 바위 하나당 방어도를 {Amount} 얻습니다.",
+  "THROWROCKIRONCLAD-ROCK_FORM_POWER.title": "바위의 형상",
+  "THROWROCKIRONCLAD-ROCK_FORM_POWER.description": "매 턴 시작 시, 거대한 바위 카드를 얻습니다. 바위 카드의 비용이 감소합니다.",
+  "THROWROCKIRONCLAD-ROCK_FORM_POWER.smartDescription": "매 턴 시작 시, 거대한 바위 카드를 얻습니다. 바위 카드의 비용이 감소합니다.",
+  "THROWROCKIRONCLAD-ROCK_ARMOR_POWER.title": "바위 갑옷",
+  "THROWROCKIRONCLAD-ROCK_ARMOR_POWER.description": "거대한 바위 카드를 사용할 때마다 방어도를 {Amount} 얻습니다.",
+  "THROWROCKIRONCLAD-ROCK_ARMOR_POWER.smartDescription": "거대한 바위 카드를 사용할 때마다 방어도를 {Amount} 얻습니다.",
+  "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.title": "절대적인 바위",
+  "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.description": "거대한 바위의 피해가 {Amount} 증가합니다.",
+  "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.smartDescription": "거대한 바위의 피해가 {Amount} 증가합니다."
+}

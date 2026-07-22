@@ -1,0 +1,12 @@
+{
+  "THROW_ROCK_IRONCLAD_CARD_ROCKADE.title": "바위케이드",
+  "THROW_ROCK_IRONCLAD_CARD_ROCKADE.description": "턴 종료 시, 이번 전투에서 사용한 거대한 바위 하나당 방어도를 {Block:diff()} 얻습니다.",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_FORM.title": "바위의 형상",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_FORM.description": "매 턴 시작 시, {IfUpgraded:show:거대한 바위+|거대한 바위} 카드를 얻습니다. 바위 카드의 비용이 1 감소합니다.",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_ARMOR.title": "바위 갑옷",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_ARMOR.description": "거대한 바위 카드를 사용할 때마다 방어도를 {Block:diff()} 얻습니다.",
+  "THROW_ROCK_IRONCLAD_CARD_ABSOLUTE_ROCK.title": "절대적인 바위",
+  "THROW_ROCK_IRONCLAD_CARD_ABSOLUTE_ROCK.description": "거대한 바위의 피해가 {ExtraDamage:diff()} 증가합니다.",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM.title": "바위 강타",
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM.description": "피해를 {Damage:diff()} 줍니다. 거대한 바위 1장을 버린 카드 더미에 넣습니다. 소멸."
+}
