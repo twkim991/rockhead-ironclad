@@ -15,7 +15,6 @@ using ThrowRockIronclad.ThrowRockIroncladCode.Powers;
 namespace ThrowRockIronclad.ThrowRockIroncladCode.Compatibility;
 
 [HarmonyPatch(typeof(ModelDb), nameof(ModelDb.Init))]
-[HarmonyAfter("BaseLib")]
 public static class RuntimeContentDiagnosticsPatch
 {
     [HarmonyPostfix]
@@ -31,8 +30,15 @@ public static class RuntimeContentDiagnosticsPatch
 
         foreach (ThrowRockIroncladPower power in powers)
         {
+            string actualPowerId = ModelDb.GetEntry(power.GetType());
+            string expectedPowerId = RockPowerModelPatch.GetExpectedEntry(power.GetType());
+            Require(
+                actualPowerId == expectedPowerId,
+                $"stable power ID changed for {power.GetType().Name}: actual={actualPowerId}, expected={expectedPowerId}");
             Require(power.Title.Exists(), $"Title localization missing for {power.GetType().Name}");
             Require(power.Description.Exists(), $"Description localization missing for {power.GetType().Name}");
+            Require(power.PackedIconPath == power.CustomPackedIconPath, $"small icon path was not replaced for {power.GetType().Name}");
+            Require(power.ResolvedBigIconPath == power.CustomBigIconPath, $"large icon path was not replaced for {power.GetType().Name}");
             Require(
                 ResourceLoader.Exists(power.CustomPackedIconPath),
                 $"small icon missing for {power.GetType().Name}: {power.CustomPackedIconPath}");
@@ -57,6 +63,8 @@ public static class RuntimeContentDiagnosticsPatch
             ModelDb.Card<BodySlam>(),
             ModelDb.Card<GiantRock>(),
         ];
+
+        Require(RockTags.RockValue == 1_059_034_496, "stable Rock tag value changed");
 
         foreach (CardModel card in rockCards)
         {

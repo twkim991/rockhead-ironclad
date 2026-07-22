@@ -147,6 +147,9 @@ internal static class FullGameIntegrationSelfTest
         Require(target.CurrentHp == hpBeforeBaselineRock - 16, "a Primal Force Giant Rock without Absolute Rock must deal 16 damage");
         Require(GiantRockHistory.CountFinishedPlaysThisCombat(playerOne.Creature, combatState) == 1, "pre-Power Giant Rock history count must be one");
 
+        // Keep each test section isolated before applying the power cards.
+        await RemoveAllCombatCards(playerOne);
+
         await PlayPowerCard<StoneArmor>(combatState, playerOne, choiceContext, upgraded: false);
         await PlayPowerCard<StoneArmor>(combatState, playerOne, choiceContext, upgraded: true);
         await PlayPowerCard<Barricade>(combatState, playerOne, choiceContext, upgraded: false);
@@ -155,6 +158,7 @@ internal static class FullGameIntegrationSelfTest
         await PlayPowerCard<Juggernaut>(combatState, playerOne, choiceContext, upgraded: true);
         await PlayPowerCard<DemonForm>(combatState, playerOne, choiceContext, upgraded: false);
         await PlayPowerCard<DemonForm>(combatState, playerOne, choiceContext, upgraded: true);
+        await RemoveAllCombatCards(playerOne);
 
         RockArmorPower rockArmor = RequirePower<RockArmorPower>(playerOne, 10);
         RockadePower rockade = RequirePower<RockadePower>(playerOne, 5);
@@ -316,7 +320,7 @@ internal static class FullGameIntegrationSelfTest
                 StarsSpent = 0,
                 StarValue = 0,
             },
-            skipCardPileVisuals: true);
+            skipCardPileVisuals: false);
 
     private static T RequirePower<T>(Player player, int expectedAmount) where T : PowerModel
     {

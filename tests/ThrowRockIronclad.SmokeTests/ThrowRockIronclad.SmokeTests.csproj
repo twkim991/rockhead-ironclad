@@ -9,7 +9,6 @@
   <ItemGroup>
     <CompilerVisibleProperty Include="GodotProjectDir" />
     <ProjectReference Include="..\..\ThrowRockIronclad.csproj" />
-    <PackageReference Include="Alchyr.Sts2.BaseLib" Version="3.3.8" />
     <Reference Include="0Harmony" HintPath="$(GameDataDir)\0Harmony.dll" Private="true" />
     <Reference Include="GodotSharp" HintPath="$(GameDataDir)\GodotSharp.dll" Private="true" />
     <Reference Include="sts2" HintPath="$(GameDataDir)\sts2.dll" Private="true" />

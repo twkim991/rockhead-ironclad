@@ -67,7 +67,6 @@ static T OwnCard<T>(T card, Player owner) where T : CardModel
     return card;
 }
 
-RockTags.Rock = (CardTag)123_456;
 var harmony = new Harmony("ThrowRockIronclad.SmokeTests");
 foreach (Type patchType in typeof(MainFile).Assembly.GetTypes())
 {
@@ -80,6 +79,13 @@ foreach (Type patchType in typeof(MainFile).Assembly.GetTypes())
         throw new InvalidOperationException($"Harmony patch failed: {patchType.FullName}", exception);
     }
 }
+
+Check(
+    !typeof(MainFile).Assembly.GetReferencedAssemblies()
+        .Any(assembly => string.Equals(assembly.Name, "BaseLib", StringComparison.OrdinalIgnoreCase)),
+    "Production assembly must not reference BaseLib.");
+Check(RockTags.RockValue == 1_059_034_496, "The stable Rock tag value changed.");
+Check(RockTags.Rock == (CardTag)RockTags.RockValue, "Rock tag mapping is inconsistent.");
 
 CardModel[] rockCards =
 [
@@ -150,6 +156,9 @@ foreach (ThrowRockIroncladPower power in powerIcons)
     Check(
         power.IconFileName == expectedPowerIconFiles[power.GetType()],
         $"Wrong power icon mapping: {power.GetType().Name}");
+    Check(
+        ModelDb.GetEntry(power.GetType()) == RockPowerModelPatch.GetExpectedEntry(power.GetType()),
+        $"Wrong stable power ID: {power.GetType().Name}");
 }
 
 var rockade = Upgrade(new Barricade());

@@ -3,7 +3,7 @@
 ## 지원 기준
 
 - Slay the Spire 2: `v0.107.1`
-- BaseLib: `3.3.8`
+- 외부 모드 의존성: 없음
 - .NET SDK: `9.0`
 - Godot SDK: `4.5.1`
 
@@ -37,12 +37,14 @@ ThrowRockIronclad.pck
 ThrowRockIronclad.json
 ```
 
-게임 설치 폴더에는 동일 파일과 디버깅용 PDB가 `mods/ThrowRockIronclad/`에 복사된다. BaseLib은 별도 의존성으로 설치해야 한다.
+게임 설치 폴더에는 동일 파일과 디버깅용 PDB가 `mods/ThrowRockIronclad/`에 복사된다. 별도로 설치해야 하는 라이브러리 모드는 없다.
 
 ## 검증 범위와 남은 한계
 
 자동 스모크 테스트에 더해 컴파일 타임 전체 게임 통합 하네스를 실행했다. 이 하네스는 실제 전투 방과 두 플레이어 상태를 만들고, 다섯 교체 카드의 `OnPlay`, 게임 Hook dispatcher를 통한 턴 시작·턴 종료 효과, GiantRock/GiantRock+ 피해, 방어도, 비용, 소멸, 전투 기록 격리를 검증한다. 실행 중 `NCard`와 `NPower` 노드의 한국어 텍스트 및 아이콘을 확인하고, 강화 렌더와 스크린샷도 생성한다. 다섯 카드의 런 저장 모델 왕복과 전체 전투 네트워크 패킷 왕복도 통과했다.
 
-Power 확대 아이콘은 BaseLib의 경로 교체만으로 게임의 사전 로딩 목록에 들어가지 않으므로, Rock 카드의 `RunAssetPaths`에 네 Power의 전용 소형·확대 아이콘 8개를 추가한다. 실제 전투에서 `PreloadManager.Cache` 적재 여부까지 확인하며, 모드 아이콘에 대한 `Asset not cached` 경고가 없어야 한다.
+BaseLib 매니페스트를 임시 비활성화한 실제 게임에서도 같은 전체 통합 하네스를 통과했다. 테스트 직후 해당 매니페스트는 원래 위치와 이름으로 복구했다.
+
+Power 아이콘 경로는 모드 자체 Harmony 패치로 교체한다. 확대 아이콘은 경로 교체만으로 게임의 사전 로딩 목록에 들어가지 않으므로, Rock 카드의 `RunAssetPaths`에 네 Power의 전용 소형·확대 아이콘 8개를 추가한다. 실제 전투에서 `PreloadManager.Cache` 적재 여부까지 확인하며, 모드 아이콘에 대한 `Asset not cached` 경고가 없어야 한다.
 
 아직 별도 수동 환경이 필요한 항목은 실제 저장 파일을 종료 후 다시 불러오는 전투 복구, 두 게임 클라이언트의 로비 접속과 장시간 desync 관찰, 모드 버전 불일치 차단, 손이 가득 찬 상태의 시각 확인, 힘·약화·취약 조합의 카드 미리보기다. 자세한 상태는 [MANUAL_TEST_CHECKLIST.md](MANUAL_TEST_CHECKLIST.md)에 남긴다.

@@ -52,7 +52,7 @@
 | 최초 지원 버전 | `v0.107.1` |
 | 런타임 | .NET 9 |
 | 엔진/패키징 | MegaDot 또는 정확히 호환되는 Godot .NET |
-| 모드 기반 | BaseLib |
+| 모드 기반 | 게임 기본 Mod API와 자체 Harmony 패치 |
 | 런타임 패치 | Harmony |
 | 프로젝트 템플릿 | Alchyr StS2 Content Mod Template |
 | 모드 ID | `ThrowRockIronclad` |
@@ -67,17 +67,12 @@
   "has_pck": true,
   "has_dll": true,
   "min_game_version": "0.107.1",
-  "dependencies": [
-    {
-      "id": "BaseLib",
-      "min_version": "구현 시작 시 검증한 버전"
-    }
-  ],
+  "dependencies": [],
   "affects_gameplay": true
 }
 ```
 
-BaseLib 버전은 `*`로 두지 않고, 최초 빌드와 게임 실행을 통과한 명시적 버전으로 고정한다.
+외부 라이브러리 모드에 의존하지 않는다. Harmony와 게임 어셈블리는 게임이 제공하는 파일을 참조하며 배포물에 복사하지 않는다.
 
 ## 4. 확인된 바닐라 동작
 
@@ -305,15 +300,17 @@ card.Tags.Contains(CardTag.Strike)
 
 ### 6.1 숨은 CardTag
 
-화면에 노출되는 `CardKeyword`는 만들지 않는다. BaseLib의 사용자 정의 enum 기능으로 숨은 `CardTag`를 만든다.
+화면에 노출되는 `CardKeyword`는 만들지 않는다. 숨은 `CardTag` 값을 모드에 고정하고 대상 카드의 `Tags` getter에 추가한다.
 
 ```csharp
 public static class RockTags
 {
-    [CustomEnum]
-    public static CardTag Rock;
+    public const int RockValue = 1_059_034_496;
+    public static readonly CardTag Rock = (CardTag)RockValue;
 }
 ```
+
+`RockValue`는 이전 버전이 생성하던 결정론적 값을 그대로 유지하여 기존 멀티플레이 데이터와의 호환성을 보존한다.
 
 ### 6.2 태그 대상
 
@@ -479,7 +476,7 @@ throw_rock_ironclad/
 
 ### 8.1 공통 Power 기반 클래스
 
-`ThrowRockIroncladPower`는 BaseLib의 `CustomPowerModel`을 상속한다. 공통 책임은 다음과 같다.
+`ThrowRockIroncladPower`는 게임의 `PowerModel`을 직접 상속한다. 모드 자체 Harmony 패치가 기존과 같은 `THROWROCKIRONCLAD-` ID 접두사와 아이콘 경로를 공급한다. 공통 책임은 다음과 같다.
 
 - 모드 전용 로컬라이징 ID 구성
 - Power 아이콘 경로 구성
@@ -553,7 +550,7 @@ if (card.Owner == Owner.Player && card.Tags.Contains(RockTags.Rock))
 
 실제 API의 Owner 타입에 맞추어 비교식을 조정하되, 반드시 Power 소유자의 카드에만 적용한다.
 
-내부 데이터 복제와 네트워크 동기화가 BaseLib/게임의 Power cloning 규칙에서 정상적으로 처리되는지 기술 스파이크에서 검증한다. 문제가 있으면 일반 생성원과 강화 생성원을 서로 다른 숨은 Power로 분리하는 대안을 사용한다.
+내부 데이터 복제와 네트워크 동기화가 게임의 Power cloning 규칙에서 정상적으로 처리되는지 기술 스파이크에서 검증한다. 문제가 있으면 일반 생성원과 강화 생성원을 서로 다른 숨은 Power로 분리하는 대안을 사용한다.
 
 ### 8.4 RockArmorPower
 
@@ -758,7 +755,7 @@ Power 키도 같은 방식으로 namespaced 처리한다.
 {ExtraDamage:diff()}
 ```
 
-BaseLib localization analyzer를 활성화하여 누락 키와 변수 불일치를 빌드 단계에서 검출한다.
+일반 모드 분석기는 유지하되, 외부 라이브러리의 ID 접두사를 전제로 하는 Power 진단은 비활성화한다. 네 Power의 ID·로컬라이징·아이콘은 스모크 테스트와 Model DB 초기화 후 런타임 진단으로 검증한다.
 
 ## 12. 이미지 연기 전략
 
@@ -776,7 +773,7 @@ BaseLib localization analyzer를 활성화하여 누락 키와 변수 불일치�
 
 각 Power는 `IconFileName`으로 전용 소형·확대 아이콘 한 쌍을 선택한다. 네 Power의 파일명이 서로 다른지도 런타임 진단으로 검증한다.
 
-BaseLib `3.3.8`은 커스텀 Power의 아이콘 경로를 교체하지만 확대 아이콘을 게임의 run asset set에 자동으로 추가하지 않는다. 따라서 Rock 카드의 `RunAssetPaths`에 전용 아이콘 8개를 모두 추가하여 `PreloadManager.Cache`가 전투 전에 로드하도록 한다. 런타임 검증은 리소스 존재 여부뿐 아니라 확대 아이콘의 캐시 적재 여부도 확인한다.
+모드 자체 Harmony 패치가 커스텀 Power의 아이콘 경로를 교체한다. 경로 교체만으로 확대 아이콘이 게임의 run asset set에 자동 추가되지는 않으므로, Rock 카드의 `RunAssetPaths`에 전용 아이콘 8개를 모두 추가하여 `PreloadManager.Cache`가 전투 전에 로드하도록 한다. 런타임 검증은 리소스 존재 여부뿐 아니라 확대 아이콘의 캐시 적재 여부도 확인한다.
 
 ## 13. 구현 단계
 
@@ -787,7 +784,7 @@ BaseLib `3.3.8`은 커스텀 Power의 아이콘 경로를 교체하지만 확대
 - Content Mod 템플릿으로 프로젝트 생성
 - 프로젝트와 solution을 같은 디렉터리에 배치
 - 게임 및 MegaDot 경로 설정
-- BaseLib 의존성 버전 고정
+- 외부 모드 의존성이 없는 매니페스트 구성
 - 매니페스트 작성
 - `SOURCES/`, 빌드 결과물, 로컬 경로 설정 파일을 `.gitignore`에 추가
 - 빈 DLL/PCK를 Publish하여 게임 Mod Settings에서 로드 확인
@@ -1049,7 +1046,7 @@ BaseLib `3.3.8`은 커스텀 Power의 아이콘 경로를 교체하지만 확대
 - `SupportedGameVersion`에서 개발 기준 버전을 로그에 표시한다.
 - Harmony 대상 메서드가 없으면 조용히 무시하지 않고 명확한 오류를 기록한다.
 - 카드별 패치를 분리하여 깨진 범위를 즉시 찾을 수 있게 한다.
-- BaseLib 업데이트 후 먼저 빈 모드 로드, 태그, 카드 1장 순서로 회귀 테스트한다.
+- 게임 업데이트 후 먼저 빈 모드 로드, 고정 태그 값, Power ID, 카드 1장 순서로 회귀 테스트한다.
 
 ### 15.2 다른 카드 리워크 모드
 
