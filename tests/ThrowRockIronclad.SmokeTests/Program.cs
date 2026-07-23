@@ -5,13 +5,16 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.ValueProps;
 using ThrowRockIronclad.ThrowRockIroncladCode;
+using ThrowRockIronclad.ThrowRockIroncladCode.Cards;
 using ThrowRockIronclad.ThrowRockIroncladCode.Core;
 using ThrowRockIronclad.ThrowRockIroncladCode.Patches.Presentation;
 using ThrowRockIronclad.ThrowRockIroncladCode.Powers;
+using ThrowRockIronclad.ThrowRockIroncladCode.Relics;
 
 static void Check(bool condition, string message)
 {
@@ -95,6 +98,10 @@ CardModel[] rockCards =
     new Juggernaut(),
     new BodySlam(),
     new GiantRock(),
+    new HiddenRock(),
+    new InevitableRock(),
+    new RockFive(),
+    new RockCharge(),
 ];
 
 foreach (CardModel card in rockCards)
@@ -111,6 +118,10 @@ var expectedLocKeys = new Dictionary<Type, string>
     [typeof(StoneArmor)] = "THROW_ROCK_IRONCLAD_CARD_ROCK_ARMOR",
     [typeof(Juggernaut)] = "THROW_ROCK_IRONCLAD_CARD_ABSOLUTE_ROCK",
     [typeof(BodySlam)] = "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM",
+    [typeof(HiddenRock)] = "THROWROCKIRONCLAD-HIDDEN_ROCK",
+    [typeof(InevitableRock)] = "THROWROCKIRONCLAD-INEVITABLE_ROCK",
+    [typeof(RockFive)] = "THROWROCKIRONCLAD-ROCK_FIVE",
+    [typeof(RockCharge)] = "THROWROCKIRONCLAD-ROCK_CHARGE",
 };
 
 foreach ((Type type, string key) in expectedLocKeys)
@@ -127,6 +138,10 @@ var expectedPortraitFiles = new Dictionary<Type, string>
     [typeof(StoneArmor)] = "rock_armor.png",
     [typeof(Juggernaut)] = "absolute_rock.png",
     [typeof(BodySlam)] = "rock_slam.png",
+    [typeof(HiddenRock)] = "hidden_rock.png",
+    [typeof(InevitableRock)] = "inevitable_rock.png",
+    [typeof(RockFive)] = "rock_five.png",
+    [typeof(RockCharge)] = "rock_charge.png",
 };
 
 foreach ((Type type, string fileName) in expectedPortraitFiles)
@@ -141,6 +156,7 @@ var expectedPowerIconFiles = new Dictionary<Type, string>
     [typeof(RockFormPower)] = "rock_form_power.png",
     [typeof(RockArmorPower)] = "rock_armor_power.png",
     [typeof(AbsoluteRockPower)] = "absolute_rock_power.png",
+    [typeof(RockChargeNextTurnPower)] = "rock_charge_power.png",
 };
 
 ThrowRockIroncladPower[] powerIcons =
@@ -149,6 +165,7 @@ ThrowRockIroncladPower[] powerIcons =
     new RockFormPower(),
     new RockArmorPower(),
     new AbsoluteRockPower(),
+    new RockChargeNextTurnPower(),
 ];
 
 foreach (ThrowRockIroncladPower power in powerIcons)
@@ -160,6 +177,18 @@ foreach (ThrowRockIroncladPower power in powerIcons)
         ModelDb.GetEntry(power.GetType()) == RockPowerModelPatch.GetExpectedEntry(power.GetType()),
         $"Wrong stable power ID: {power.GetType().Name}");
 }
+
+var rockRelic = new Rock();
+Check(rockRelic.Rarity == RelicRarity.Uncommon, "Rock relic must be Uncommon.");
+Check(
+    ModelDb.GetEntry(typeof(Rock)) == RockPowerModelPatch.GetExpectedEntry(typeof(Rock)),
+    "Wrong stable relic ID: Rock.");
+Check(rockRelic.IconFileName == "rock.png", "Wrong Rock relic icon file.");
+Check(rockRelic.CustomPackedIconPath.EndsWith("/images/relics/rock.png"), "Wrong Rock relic small icon path.");
+Check(
+    rockRelic.CustomPackedIconOutlinePath.EndsWith("/images/relics/rock_outline.png"),
+    "Wrong Rock relic outline icon path.");
+Check(rockRelic.CustomBigIconPath.EndsWith("/images/relics/big/rock.png"), "Wrong Rock relic large icon path.");
 
 var rockade = Upgrade(new Barricade());
 Check(BaseCost(rockade) == 3, "Rockade+ must cost 3.");
@@ -182,8 +211,41 @@ Check(BaseCost(rockSlam) == 0, "Rock Slam+ must cost 0.");
 Check(rockSlam.DynamicVars.Damage.BaseValue == 5m, "Rock Slam+ damage must stay 5.");
 Check(rockSlam.CanonicalKeywords.Contains(CardKeyword.Exhaust), "Rock Slam must have Exhaust.");
 
+var hiddenRock = Upgrade(new HiddenRock());
+Check(BaseCost(hiddenRock) == 1, "Hidden Rock+ must cost 1.");
+Check(hiddenRock.Rarity == CardRarity.Uncommon, "Hidden Rock must be Uncommon.");
+
+var inevitableRock = Upgrade(new InevitableRock());
+Check(BaseCost(inevitableRock) == 1, "Inevitable Rock+ must cost 1.");
+Check(inevitableRock.Rarity == CardRarity.Common, "Inevitable Rock must be Common.");
+Check(inevitableRock.DynamicVars.HpLoss.BaseValue == 2m, "Inevitable Rock+ must still lose 2 HP.");
+
+var rockFive = Upgrade(new RockFive());
+Check(BaseCost(rockFive) == 2, "Rock Five+ must cost 2.");
+Check(rockFive.Rarity == CardRarity.Uncommon, "Rock Five must be Uncommon.");
+Check(rockFive.DynamicVars.Damage.BaseValue == 5m, "Rock Five+ must still deal 5 damage.");
+Check(rockFive.DynamicVars.Vulnerable.BaseValue == 2m, "Rock Five+ must still apply 2 Vulnerable.");
+
+var rockCharge = Upgrade(new RockCharge());
+Check(BaseCost(rockCharge) == 1, "Rock Charge+ must cost 1.");
+Check(rockCharge.Rarity == CardRarity.Common, "Rock Charge must be Common.");
+Check(rockCharge.DynamicVars.Block.BaseValue == 7m, "Rock Charge+ must still grant 7 Block.");
+Check(rockCharge.GainsBlock, "Rock Charge must advertise that it gains Block.");
+
+foreach (Type originalCardType in new[] { typeof(HiddenRock), typeof(InevitableRock), typeof(RockFive), typeof(RockCharge) })
+{
+    Check(
+        ModelDb.GetEntry(originalCardType) == RockPowerModelPatch.GetExpectedEntry(originalCardType),
+        $"Wrong stable card ID: {originalCardType.Name}");
+}
+
 Check(RockRules.CalculateRockadeBlock(3, 2) == 6, "Rockade calculation failed.");
 Check(RockRules.ReduceRockCost(1m, 2) == 0m, "Rock cost must floor at zero.");
+int mixedRockChargeAmount = RockChargeNextTurnPower.ApplicationAmount(upgraded: false)
+    + RockChargeNextTurnPower.ApplicationAmount(upgraded: true);
+Check(RockChargeNextTurnPower.CountSources(mixedRockChargeAmount) == 2, "Mixed Rock Charge count failed.");
+Check(RockChargeNextTurnPower.NormalSources(mixedRockChargeAmount) == 1, "Normal Rock Charge source was lost.");
+Check(RockChargeNextTurnPower.UpgradedSources(mixedRockChargeAmount) == 1, "Upgraded Rock Charge source was lost.");
 
 var (playerOne, creatureOne) = CreateTestPlayer();
 var (playerTwo, creatureTwo) = CreateTestPlayer();

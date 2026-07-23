@@ -1,19 +1,21 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
+using ThrowRockIronclad.ThrowRockIroncladCode.Cards;
 using ThrowRockIronclad.ThrowRockIroncladCode.Powers;
+using ThrowRockIronclad.ThrowRockIroncladCode.Relics;
 
 namespace ThrowRockIronclad.ThrowRockIroncladCode.Patches.Presentation;
 
 /// <summary>
-/// Supplies stable namespaced IDs and custom icon paths for this mod's powers.
+/// Supplies stable namespaced IDs for this mod's original models and custom icon paths for its powers.
 /// </summary>
 public static class RockPowerModelPatch
 {
     public const string IdPrefix = "THROWROCKIRONCLAD-";
 
-    public static string GetExpectedEntry(Type powerType)
-        => IdPrefix + StringHelper.Slugify(powerType.Name);
+    public static string GetExpectedEntry(Type modelType)
+        => IdPrefix + StringHelper.Slugify(modelType.Name);
 
     [HarmonyPatch(typeof(ModelDb), nameof(ModelDb.GetEntry))]
     private static class PrefixPowerIdPatch
@@ -21,7 +23,9 @@ public static class RockPowerModelPatch
         [HarmonyPostfix]
         private static void PrefixPowerId(Type type, ref string __result)
         {
-            if (typeof(ThrowRockIroncladPower).IsAssignableFrom(type)
+            if ((typeof(ThrowRockIroncladPower).IsAssignableFrom(type)
+                    || typeof(ThrowRockIroncladCard).IsAssignableFrom(type)
+                    || typeof(ThrowRockIroncladRelic).IsAssignableFrom(type))
                 && !__result.StartsWith(IdPrefix, StringComparison.Ordinal))
             {
                 __result = IdPrefix + __result;

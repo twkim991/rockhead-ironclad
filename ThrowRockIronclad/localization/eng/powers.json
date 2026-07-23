@@ -10,5 +10,8 @@
   "THROWROCKIRONCLAD-ROCK_ARMOR_POWER.smartDescription": "Whenever you play a Giant Rock, gain {Amount} Block.",
   "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.title": "Absolute Rock",
   "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.description": "Giant Rocks deal {Amount} additional damage.",
-  "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.smartDescription": "Giant Rocks deal {Amount} additional damage."
+  "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.smartDescription": "Giant Rocks deal {Amount} additional damage.",
+  "THROWROCKIRONCLAD-ROCK_CHARGE_NEXT_TURN_POWER.title": "Rock Charge",
+  "THROWROCKIRONCLAD-ROCK_CHARGE_NEXT_TURN_POWER.description": "At the start of your next turn, add the stored Giant Rocks to your hand.",
+  "THROWROCKIRONCLAD-ROCK_CHARGE_NEXT_TURN_POWER.smartDescription": "At the start of your next turn, add the stored Giant Rocks to your hand."
 }

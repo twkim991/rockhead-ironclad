@@ -8,6 +8,10 @@ public static class RockRules
     public const int RockArmorBlockUpgrade = 2;
     public const int AbsoluteRockDamage = 6;
     public const int RockSlamDamage = 5;
+    public const int InevitableRockHpLoss = 2;
+    public const int RockFiveDamage = 5;
+    public const int RockFiveVulnerable = 2;
+    public const int RockChargeBlock = 7;
 
     public static int CalculateRockadeBlock(int finishedGiantRockPlays, int blockPerRock)
         => Math.Max(0, finishedGiantRockPlays) * Math.Max(0, blockPerRock);

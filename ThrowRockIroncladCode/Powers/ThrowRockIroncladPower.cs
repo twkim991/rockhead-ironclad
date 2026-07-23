@@ -12,6 +12,7 @@ public abstract class ThrowRockIroncladPower : PowerModel
         "rock_form_power.png",
         "rock_armor_power.png",
         "absolute_rock_power.png",
+        "rock_charge_power.png",
     ];
 
     public abstract string IconFileName { get; }

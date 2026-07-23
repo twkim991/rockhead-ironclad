@@ -1,6 +1,7 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using ThrowRockIronclad.ThrowRockIroncladCode.Cards;
 using ThrowRockIronclad.ThrowRockIroncladCode.Extensions;
 
 namespace ThrowRockIronclad.ThrowRockIroncladCode.Patches.Presentation;
@@ -17,6 +18,10 @@ public static class CardPortraitPatch
         StoneArmor => "rock_armor.png",
         Juggernaut => "absolute_rock.png",
         BodySlam => "rock_slam.png",
+        HiddenRock => "hidden_rock.png",
+        InevitableRock => "inevitable_rock.png",
+        RockFive => "rock_five.png",
+        RockCharge => "rock_charge.png",
         _ => null,
     };
 

@@ -8,5 +8,13 @@
   "THROW_ROCK_IRONCLAD_CARD_ABSOLUTE_ROCK.title": "Absolute Rock",
   "THROW_ROCK_IRONCLAD_CARD_ABSOLUTE_ROCK.description": "Giant Rocks deal {ExtraDamage:diff()} additional damage.",
   "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM.title": "Rock Slam",
-  "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM.description": "Deal {Damage:diff()} damage. Add a Giant Rock to your discard pile. Exhaust."
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM.description": "Deal {Damage:diff()} damage. Add a Giant Rock to your discard pile. Exhaust.",
+  "THROWROCKIRONCLAD-HIDDEN_ROCK.title": "Hidden Rock",
+  "THROWROCKIRONCLAD-HIDDEN_ROCK.description": "[gold]Exhaust[/gold] 1 card.\nAdd a [gold]{IfUpgraded:show:Giant Rock+|Giant Rock}[/gold] to your hand.",
+  "THROWROCKIRONCLAD-INEVITABLE_ROCK.title": "Inevitable Rock",
+  "THROWROCKIRONCLAD-INEVITABLE_ROCK.description": "Lose {HpLoss:diff()} HP.\nAdd a [gold]{IfUpgraded:show:Giant Rock+|Giant Rock}[/gold] to your hand.",
+  "THROWROCKIRONCLAD-ROCK_FIVE.title": "Rock Five",
+  "THROWROCKIRONCLAD-ROCK_FIVE.description": "Deal {Damage:diff()} damage and apply {VulnerablePower:diff()} [gold]Vulnerable[/gold] to ALL enemies.\nAdd a [gold]{IfUpgraded:show:Giant Rock+|Giant Rock}[/gold] to your hand.",
+  "THROWROCKIRONCLAD-ROCK_CHARGE.title": "Rock Charge",
+  "THROWROCKIRONCLAD-ROCK_CHARGE.description": "Gain {Block:diff()} [gold]Block[/gold].\nNext turn, add a [gold]{IfUpgraded:show:Giant Rock+|Giant Rock}[/gold] to your hand."
 }

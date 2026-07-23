@@ -8,5 +8,13 @@
   "THROW_ROCK_IRONCLAD_CARD_ABSOLUTE_ROCK.title": "절대적인 바위",
   "THROW_ROCK_IRONCLAD_CARD_ABSOLUTE_ROCK.description": "거대한 바위의 피해가 {ExtraDamage:diff()} 증가합니다.",
   "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM.title": "바위 강타",
-  "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM.description": "피해를 {Damage:diff()} 줍니다. 거대한 바위 1장을 버린 카드 더미에 넣습니다. 소멸."
+  "THROW_ROCK_IRONCLAD_CARD_ROCK_SLAM.description": "피해를 {Damage:diff()} 줍니다. 거대한 바위 1장을 버린 카드 더미에 넣습니다. 소멸.",
+  "THROWROCKIRONCLAD-HIDDEN_ROCK.title": "숨겨진 바위",
+  "THROWROCKIRONCLAD-HIDDEN_ROCK.description": "카드를 1장 [gold]소멸[/gold]시킵니다.\n[gold]{IfUpgraded:show:거대한 바위+|거대한 바위}[/gold] 카드를 1장 손으로 가져옵니다.",
+  "THROWROCKIRONCLAD-INEVITABLE_ROCK.title": "불가피한 바위",
+  "THROWROCKIRONCLAD-INEVITABLE_ROCK.description": "체력을 {HpLoss:diff()} 잃습니다.\n[gold]{IfUpgraded:show:거대한 바위+|거대한 바위}[/gold] 카드를 1장 손으로 가져옵니다.",
+  "THROWROCKIRONCLAD-ROCK_FIVE.title": "바위파이브",
+  "THROWROCKIRONCLAD-ROCK_FIVE.description": "모든 적에게 피해를 {Damage:diff()} 주고 [gold]취약[/gold]을 {VulnerablePower:diff()} 부여합니다.\n[gold]{IfUpgraded:show:거대한 바위+|거대한 바위}[/gold] 카드를 1장 손으로 가져옵니다.",
+  "THROWROCKIRONCLAD-ROCK_CHARGE.title": "바위 충전",
+  "THROWROCKIRONCLAD-ROCK_CHARGE.description": "[gold]방어도[/gold]를 {Block:diff()} 얻습니다.\n다음 턴에, [gold]{IfUpgraded:show:거대한 바위+|거대한 바위}[/gold] 카드를 1장 손으로 가져옵니다."
 }

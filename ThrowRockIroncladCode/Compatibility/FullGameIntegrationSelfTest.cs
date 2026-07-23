@@ -27,9 +27,11 @@ using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Unlocks;
+using ThrowRockIronclad.ThrowRockIroncladCode.Cards;
 using ThrowRockIronclad.ThrowRockIroncladCode.Core;
 using ThrowRockIronclad.ThrowRockIroncladCode.Patches.Presentation;
 using ThrowRockIronclad.ThrowRockIroncladCode.Powers;
+using ThrowRockIronclad.ThrowRockIroncladCode.Relics;
 using ThrowRockIronclad.ThrowRockIroncladCode.Utilities;
 
 namespace ThrowRockIronclad.ThrowRockIroncladCode.Compatibility;
@@ -95,11 +97,20 @@ internal static class FullGameIntegrationSelfTest
             ascensionLevel: 0,
             seed: "THROWROCK1");
 
-        AddReplacementCardsToDeck(runState, playerOne);
+        playerOne.AddRelicInternal(ModelDb.Relic<Rock>().ToMutable(), silent: true);
+        AddTestCardsToDeck(runState, playerOne);
         RunManager.Instance.SetUpNewSingleplayer(runState, shouldSave: false);
         ValidateRunSaveRoundTrip(runState, playerOne);
 
         await PreloadManager.LoadRunAssets([ironclad]);
+        var rockRelic = playerOne.GetRelic<Rock>()
+            ?? throw new InvalidOperationException("Rock relic was not added to the test player.");
+        Require(
+            PreloadManager.Cache.ContainsKey(rockRelic.CustomBigIconPath),
+            "Rock relic large icon was not preloaded");
+        Require(rockRelic.Icon != null, "Rock relic small icon failed to load");
+        Require(rockRelic.IconOutline != null, "Rock relic outline icon failed to load");
+        Require(rockRelic.BigIcon != null, "Rock relic large icon failed to load");
         RunManager.Instance.Launch();
         Game.RootSceneContainer.SetCurrentScene(NRun.Create(runState));
         await RunManager.Instance.SetActInternal(0);
@@ -115,6 +126,14 @@ internal static class FullGameIntegrationSelfTest
         CombatState combatState = CombatManager.Instance.DebugOnlyGetState()
             ?? throw new InvalidOperationException("Combat state was not created.");
         Require(combatState.Players.Count == 2, "fake multiplayer combat must contain two players");
+        IReadOnlyList<GiantRock> openingRocks = playerOne.PlayerCombatState!.Hand.Cards
+            .OfType<GiantRock>()
+            .ToArray();
+        Require(openingRocks.Count == 1, "Rock relic must add exactly one Giant Rock to the opening hand");
+        Require(!openingRocks[0].IsUpgraded, "Rock relic must add a normal Giant Rock");
+        Require(
+            !playerTwo.PlayerCombatState!.Hand.Cards.OfType<GiantRock>().Any(),
+            "Rock relic must not add a Giant Rock to another player's hand");
 
         await RemoveAllCombatCards(playerOne);
         await RemoveAllCombatCards(playerTwo);
@@ -148,6 +167,100 @@ internal static class FullGameIntegrationSelfTest
         Require(GiantRockHistory.CountFinishedPlaysThisCombat(playerOne.Creature, combatState) == 1, "pre-Power Giant Rock history count must be one");
 
         // Keep each test section isolated before applying the power cards.
+        await RemoveAllCombatCards(playerOne);
+
+        StrikeIronclad hiddenRockFuel = await CreateInHand<StrikeIronclad>(combatState, playerOne, upgraded: false);
+        HiddenRock hiddenRock = await CreateInHand<HiddenRock>(combatState, playerOne, upgraded: false);
+        await Play(hiddenRock, choiceContext, target: null);
+        Require(
+            playerOne.PlayerCombatState!.ExhaustPile.Cards.Contains(hiddenRockFuel),
+            "Hidden Rock must Exhaust the selected hand card");
+        GiantRock hiddenRockResult = playerOne.PlayerCombatState.Hand.Cards.OfType<GiantRock>().Single();
+        Require(!hiddenRockResult.IsUpgraded, "normal Hidden Rock must create a normal Giant Rock");
+        await RemoveAllCombatCards(playerOne);
+
+        StrikeIronclad upgradedHiddenRockFuel = await CreateInHand<StrikeIronclad>(combatState, playerOne, upgraded: false);
+        HiddenRock upgradedHiddenRock = await CreateInHand<HiddenRock>(combatState, playerOne, upgraded: true);
+        await Play(upgradedHiddenRock, choiceContext, target: null);
+        Require(
+            playerOne.PlayerCombatState!.ExhaustPile.Cards.Contains(upgradedHiddenRockFuel),
+            "Hidden Rock+ must Exhaust the selected hand card");
+        GiantRock upgradedHiddenRockResult = playerOne.PlayerCombatState.Hand.Cards.OfType<GiantRock>().Single();
+        Require(upgradedHiddenRockResult.IsUpgraded, "Hidden Rock+ must create Giant Rock+");
+        await RemoveAllCombatCards(playerOne);
+
+        int hpBeforeInevitableRock = playerOne.Creature.CurrentHp;
+        InevitableRock inevitableRock = await CreateInHand<InevitableRock>(combatState, playerOne, upgraded: false);
+        await Play(inevitableRock, choiceContext, target: null);
+        Require(
+            playerOne.Creature.CurrentHp == hpBeforeInevitableRock - RockRules.InevitableRockHpLoss,
+            "Inevitable Rock must lose exactly 2 HP");
+        Require(
+            playerOne.PlayerCombatState!.Hand.Cards.OfType<GiantRock>().Single().IsUpgraded == false,
+            "normal Inevitable Rock must create a normal Giant Rock");
+        await RemoveAllCombatCards(playerOne);
+
+        int hpBeforeUpgradedInevitableRock = playerOne.Creature.CurrentHp;
+        InevitableRock upgradedInevitableRock = await CreateInHand<InevitableRock>(combatState, playerOne, upgraded: true);
+        await Play(upgradedInevitableRock, choiceContext, target: null);
+        Require(
+            playerOne.Creature.CurrentHp == hpBeforeUpgradedInevitableRock - RockRules.InevitableRockHpLoss,
+            "Inevitable Rock+ must still lose exactly 2 HP");
+        Require(
+            playerOne.PlayerCombatState!.Hand.Cards.OfType<GiantRock>().Single().IsUpgraded,
+            "Inevitable Rock+ must create Giant Rock+");
+        await RemoveAllCombatCards(playerOne);
+
+        int hpBeforeRockFive = target.CurrentHp;
+        RockFive rockFive = await CreateInHand<RockFive>(combatState, playerOne, upgraded: false);
+        await Play(rockFive, choiceContext, target: null);
+        Require(target.CurrentHp == hpBeforeRockFive - RockRules.RockFiveDamage, "Rock Five must deal exactly 5 damage");
+        Require(target.GetPowerAmount<VulnerablePower>() == 2, "Rock Five must apply exactly 2 Vulnerable");
+        Require(
+            playerOne.PlayerCombatState!.Hand.Cards.OfType<GiantRock>().Single().IsUpgraded == false,
+            "normal Rock Five must create a normal Giant Rock");
+        await PowerCmd.Remove<VulnerablePower>(target);
+        await RemoveAllCombatCards(playerOne);
+
+        int hpBeforeUpgradedRockFive = target.CurrentHp;
+        RockFive upgradedRockFive = await CreateInHand<RockFive>(combatState, playerOne, upgraded: true);
+        await Play(upgradedRockFive, choiceContext, target: null);
+        Require(
+            target.CurrentHp == hpBeforeUpgradedRockFive - RockRules.RockFiveDamage,
+            "Rock Five+ must still deal exactly 5 damage");
+        Require(target.GetPowerAmount<VulnerablePower>() == 2, "Rock Five+ must still apply exactly 2 Vulnerable");
+        Require(
+            playerOne.PlayerCombatState!.Hand.Cards.OfType<GiantRock>().Single().IsUpgraded,
+            "Rock Five+ must create Giant Rock+");
+        await PowerCmd.Remove<VulnerablePower>(target);
+        await RemoveAllCombatCards(playerOne);
+
+        int blockBeforeRockCharge = playerOne.Creature.Block;
+        RockCharge rockChargeCard = await CreateInHand<RockCharge>(combatState, playerOne, upgraded: false);
+        RockCharge upgradedRockChargeCard = await CreateInHand<RockCharge>(combatState, playerOne, upgraded: true);
+        await Play(rockChargeCard, choiceContext, target: null);
+        await Play(upgradedRockChargeCard, choiceContext, target: null);
+        Require(
+            playerOne.Creature.Block == blockBeforeRockCharge + RockRules.RockChargeBlock * 2,
+            "normal and upgraded Rock Charge must each grant 7 Block");
+        RockChargeNextTurnPower rockChargePower = RequirePower<RockChargeNextTurnPower>(
+            playerOne,
+            RockChargeNextTurnPower.ApplicationAmount(false)
+                + RockChargeNextTurnPower.ApplicationAmount(true));
+        Require(rockChargePower.DisplayAmount == 2, "mixed Rock Charge sources must display as two stacks");
+        rockChargePower.AmountOnTurnStart = rockChargePower.Amount;
+        int handBeforeRockCharge = playerOne.PlayerCombatState!.Hand.Cards.Count;
+        await Hook.AfterSideTurnStart(combatState, CombatSide.Player, [playerOne.Creature, playerTwo.Creature]);
+        IReadOnlyList<GiantRock> chargedRocks = playerOne.PlayerCombatState.Hand.Cards
+            .Skip(handBeforeRockCharge)
+            .OfType<GiantRock>()
+            .ToList();
+        Require(chargedRocks.Count == 2, "mixed Rock Charge must generate two Giant Rocks next turn");
+        Require(chargedRocks.Count(card => card.IsUpgraded) == 1, "mixed Rock Charge must generate one Giant Rock+");
+        Require(chargedRocks.Count(card => !card.IsUpgraded) == 1, "mixed Rock Charge must generate one normal Giant Rock");
+        Require(
+            playerOne.Creature.GetPower<RockChargeNextTurnPower>() is null,
+            "Rock Charge next-turn Power must remove itself after triggering");
         await RemoveAllCombatCards(playerOne);
 
         await PlayPowerCard<StoneArmor>(combatState, playerOne, choiceContext, upgraded: false);
@@ -232,17 +345,33 @@ internal static class FullGameIntegrationSelfTest
         Require(playerOne.Creature.Block == ownerBlockBeforeRemoteRock, "Rock Armor must not trigger for another player");
         Require(GiantRockHistory.CountFinishedPlaysThisCombat(playerOne.Creature, combatState) == 4, "Rockade history must exclude another player's Giant Rock");
 
-        ValidateNetworkSnapshot(runState, playerOne, rockForm.Amount);
-        await ValidateRenderedUi(combatState, playerOne, rockArmor, rockade, absoluteRock, rockForm);
+        await PowerCmd.Apply<RockChargeNextTurnPower>(
+            choiceContext,
+            playerOne.Creature,
+            RockChargeNextTurnPower.ApplicationAmount(false)
+                + RockChargeNextTurnPower.ApplicationAmount(true),
+            playerOne.Creature,
+            null);
+        RockChargeNextTurnPower pendingRockCharge = RequirePower<RockChargeNextTurnPower>(
+            playerOne,
+            RockChargeNextTurnPower.ApplicationAmount(false)
+                + RockChargeNextTurnPower.ApplicationAmount(true));
+
+        ValidateNetworkSnapshot(runState, playerOne, rockForm.Amount, pendingRockCharge.Amount);
+        await ValidateRenderedUi(combatState, playerOne, rockArmor, rockade, absoluteRock, rockForm, pendingRockCharge);
     }
 
-    private static void AddReplacementCardsToDeck(RunState runState, Player player)
+    private static void AddTestCardsToDeck(RunState runState, Player player)
     {
         player.Deck.AddInternal(runState.CreateCard<Barricade>(player));
         player.Deck.AddInternal(runState.CreateCard<DemonForm>(player));
         player.Deck.AddInternal(runState.CreateCard<StoneArmor>(player));
         player.Deck.AddInternal(runState.CreateCard<Juggernaut>(player));
         player.Deck.AddInternal(runState.CreateCard<BodySlam>(player));
+        player.Deck.AddInternal(runState.CreateCard<HiddenRock>(player));
+        player.Deck.AddInternal(runState.CreateCard<InevitableRock>(player));
+        player.Deck.AddInternal(runState.CreateCard<RockFive>(player));
+        player.Deck.AddInternal(runState.CreateCard<RockCharge>(player));
     }
 
     private static void ValidateRunSaveRoundTrip(RunState runState, Player player)
@@ -250,13 +379,26 @@ internal static class FullGameIntegrationSelfTest
         var save = RunManager.Instance.ToSave(null);
         RunState restored = RunState.FromSerializable(save);
         Player restoredPlayer = restored.Players.Single(candidate => candidate.NetId == player.NetId);
-        Type[] replacementTypes = [typeof(Barricade), typeof(DemonForm), typeof(StoneArmor), typeof(Juggernaut), typeof(BodySlam)];
-        foreach (Type replacementType in replacementTypes)
+        Type[] cardTypes =
+        [
+            typeof(Barricade),
+            typeof(DemonForm),
+            typeof(StoneArmor),
+            typeof(Juggernaut),
+            typeof(BodySlam),
+            typeof(HiddenRock),
+            typeof(InevitableRock),
+            typeof(RockFive),
+            typeof(RockCharge),
+        ];
+        foreach (Type cardType in cardTypes)
         {
             Require(
-                restoredPlayer.Deck.Cards.Any(card => card.GetType() == replacementType),
-                $"run save round-trip lost {replacementType.Name}");
+                restoredPlayer.Deck.Cards.Any(card => card.GetType() == cardType),
+                $"run save round-trip lost {cardType.Name}");
         }
+
+        Require(restoredPlayer.GetRelic<Rock>() is not null, "run save round-trip lost the Rock relic");
     }
 
     private static async Task WaitForCombatPlayPhase(Player player)
@@ -330,7 +472,11 @@ internal static class FullGameIntegrationSelfTest
         return power;
     }
 
-    private static void ValidateNetworkSnapshot(RunState runState, Player player, int expectedRockFormAmount)
+    private static void ValidateNetworkSnapshot(
+        RunState runState,
+        Player player,
+        int expectedRockFormAmount,
+        int expectedRockChargeAmount)
     {
         NetFullCombatState snapshot = NetFullCombatState.FromRun(runState, justFinishedAction: null);
         var writer = new PacketWriter();
@@ -347,6 +493,11 @@ internal static class FullGameIntegrationSelfTest
         Require(
             rockFormState.amount == expectedRockFormAmount,
             "network packet round-trip must preserve Rock Form's mixed-source Amount");
+        NetFullCombatState.PowerState rockChargeState = playerState.powers.Single(
+            state => state.id == ModelDb.Power<RockChargeNextTurnPower>().Id);
+        Require(
+            rockChargeState.amount == expectedRockChargeAmount,
+            "network packet round-trip must preserve Rock Charge's mixed-source Amount");
     }
 
     private static async Task ValidateRenderedUi(
@@ -375,10 +526,25 @@ internal static class FullGameIntegrationSelfTest
             await CreateInHand<StoneArmor>(combatState, player, upgraded: false),
             await CreateInHand<Juggernaut>(combatState, player, upgraded: false),
             await CreateInHand<BodySlam>(combatState, player, upgraded: false),
+            await CreateInHand<HiddenRock>(combatState, player, upgraded: false),
+            await CreateInHand<InevitableRock>(combatState, player, upgraded: false),
+            await CreateInHand<RockFive>(combatState, player, upgraded: false),
+            await CreateInHand<RockCharge>(combatState, player, upgraded: false),
         ];
         await AwaitFrames(4);
 
-        string[] expectedTitles = ["바위케이드", "바위의 형상", "바위 갑옷", "절대적인 바위", "바위 강타"];
+        string[] expectedTitles =
+        [
+            "바위케이드",
+            "바위의 형상",
+            "바위 갑옷",
+            "절대적인 바위",
+            "바위 강타",
+            "숨겨진 바위",
+            "불가피한 바위",
+            "바위파이브",
+            "바위 충전",
+        ];
         var cardNodes = new List<NCard>();
         for (int index = 0; index < cards.Length; index++)
         {
@@ -418,6 +584,10 @@ internal static class FullGameIntegrationSelfTest
             await CreateInHand<StoneArmor>(combatState, player, upgraded: true),
             await CreateInHand<Juggernaut>(combatState, player, upgraded: true),
             await CreateInHand<BodySlam>(combatState, player, upgraded: true),
+            await CreateInHand<HiddenRock>(combatState, player, upgraded: true),
+            await CreateInHand<InevitableRock>(combatState, player, upgraded: true),
+            await CreateInHand<RockFive>(combatState, player, upgraded: true),
+            await CreateInHand<RockCharge>(combatState, player, upgraded: true),
         ];
         await AwaitFrames(4);
         cardNodes = upgradedCards.Select(card => NCard.FindOnTable(card)
@@ -435,6 +605,10 @@ internal static class FullGameIntegrationSelfTest
         string rockArmorPreview = cardNodes[2].GetNode<RichTextLabel>("%DescriptionLabel").Text;
         string absoluteRockCostPreview = cardNodes[3].GetNode<Label>("%EnergyLabel").Text;
         string rockSlamCostPreview = cardNodes[4].GetNode<Label>("%EnergyLabel").Text;
+        string hiddenRockPreview = cardNodes[5].GetNode<RichTextLabel>("%DescriptionLabel").Text;
+        string inevitableRockPreview = cardNodes[6].GetNode<RichTextLabel>("%DescriptionLabel").Text;
+        string rockFivePreview = cardNodes[7].GetNode<RichTextLabel>("%DescriptionLabel").Text;
+        string rockChargePreview = cardNodes[8].GetNode<RichTextLabel>("%DescriptionLabel").Text;
         Require(
             rockadePreview.Contains('3'),
             $"Rockade upgrade preview must render Block coefficient 3; rendered='{rockadePreview}'");
@@ -446,6 +620,10 @@ internal static class FullGameIntegrationSelfTest
             $"Rock Armor upgrade preview must render Block 6; rendered='{rockArmorPreview}'");
         Require(absoluteRockCostPreview == "1", $"Absolute Rock upgrade preview must render cost 1; rendered='{absoluteRockCostPreview}'");
         Require(rockSlamCostPreview == "0", $"Rock Slam upgrade preview must render cost 0; rendered='{rockSlamCostPreview}'");
+        Require(hiddenRockPreview.Contains("거대한 바위+"), $"Hidden Rock+ preview is wrong: rendered='{hiddenRockPreview}'");
+        Require(inevitableRockPreview.Contains("거대한 바위+"), $"Inevitable Rock+ preview is wrong: rendered='{inevitableRockPreview}'");
+        Require(rockFivePreview.Contains("거대한 바위+"), $"Rock Five+ preview is wrong: rendered='{rockFivePreview}'");
+        Require(rockChargePreview.Contains("거대한 바위+"), $"Rock Charge+ preview is wrong: rendered='{rockChargePreview}'");
     }
 
     private static async Task AwaitFrames(int count)

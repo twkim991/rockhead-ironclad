@@ -3,14 +3,19 @@ using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Models.RelicPools;
 using MegaCrit.Sts2.Core.Unlocks;
 using MegaCrit.Sts2.Core.ValueProps;
+using ThrowRockIronclad.ThrowRockIroncladCode.Cards;
 using ThrowRockIronclad.ThrowRockIroncladCode.Core;
 using ThrowRockIronclad.ThrowRockIroncladCode.Patches.Presentation;
 using ThrowRockIronclad.ThrowRockIroncladCode.Powers;
+using ThrowRockIronclad.ThrowRockIroncladCode.Relics;
 
 namespace ThrowRockIronclad.ThrowRockIroncladCode.Compatibility;
 
@@ -26,6 +31,7 @@ public static class RuntimeContentDiagnosticsPatch
             ModelDb.Power<RockFormPower>(),
             ModelDb.Power<RockArmorPower>(),
             ModelDb.Power<AbsoluteRockPower>(),
+            ModelDb.Power<RockChargeNextTurnPower>(),
         ];
 
         foreach (ThrowRockIroncladPower power in powers)
@@ -62,6 +68,10 @@ public static class RuntimeContentDiagnosticsPatch
             ModelDb.Card<Juggernaut>(),
             ModelDb.Card<BodySlam>(),
             ModelDb.Card<GiantRock>(),
+            ModelDb.Card<HiddenRock>(),
+            ModelDb.Card<InevitableRock>(),
+            ModelDb.Card<RockFive>(),
+            ModelDb.Card<RockCharge>(),
         ];
 
         Require(RockTags.RockValue == 1_059_034_496, "stable Rock tag value changed");
@@ -74,7 +84,53 @@ public static class RuntimeContentDiagnosticsPatch
         Require(!ModelDb.Card<PrimalForce>().Tags.Contains(RockTags.Rock), "PrimalForce must not have the Rock tag");
         Require(ModelDb.Card<BodySlam>().CanonicalKeywords.Contains(CardKeyword.Exhaust), "Rock Slam must have Exhaust");
 
-        foreach (CardModel card in rockCards.Take(5))
+        ThrowRockIroncladCard[] newCards =
+        [
+            ModelDb.Card<HiddenRock>(),
+            ModelDb.Card<InevitableRock>(),
+            ModelDb.Card<RockFive>(),
+            ModelDb.Card<RockCharge>(),
+        ];
+
+        HashSet<ModelId> ironcladCardIds = ModelDb.CardPool<IroncladCardPool>().AllCardIds.ToHashSet();
+        foreach (ThrowRockIroncladCard card in newCards)
+        {
+            string expectedCardId = RockPowerModelPatch.GetExpectedEntry(card.GetType());
+            Require(
+                card.Id.Entry == expectedCardId,
+                $"stable card ID changed for {card.GetType().Name}: actual={card.Id.Entry}, expected={expectedCardId}");
+            Require(ironcladCardIds.Contains(card.Id), $"{card.GetType().Name} is missing from the Ironclad card pool");
+        }
+
+        Require(ModelDb.Card<HiddenRock>().Rarity == CardRarity.Uncommon, "HiddenRock must be Uncommon");
+        Require(ModelDb.Card<InevitableRock>().Rarity == CardRarity.Common, "InevitableRock must be Common");
+        Require(ModelDb.Card<RockFive>().Rarity == CardRarity.Uncommon, "RockFive must be Uncommon");
+        Require(ModelDb.Card<RockCharge>().Rarity == CardRarity.Common, "RockCharge must be Common");
+
+        var rockRelic = ModelDb.Relic<Rock>();
+        string expectedRelicId = RockPowerModelPatch.GetExpectedEntry(typeof(Rock));
+        Require(
+            rockRelic.Id.Entry == expectedRelicId,
+            $"stable relic ID changed for Rock: actual={rockRelic.Id.Entry}, expected={expectedRelicId}");
+        Require(rockRelic.Rarity == RelicRarity.Uncommon, "Rock relic must be Uncommon");
+        Require(
+            ModelDb.RelicPool<IroncladRelicPool>().AllRelicIds.Contains(rockRelic.Id),
+            "Rock relic is missing from the Ironclad relic pool");
+        Require(rockRelic.Title.Exists(), "Title localization missing for Rock relic");
+        Require(rockRelic.DynamicDescription.Exists(), "Description localization missing for Rock relic");
+        Require(rockRelic.Flavor.Exists(), "Flavor localization missing for Rock relic");
+        Require(rockRelic.PackedIconPath == rockRelic.CustomPackedIconPath, "Rock relic small icon path changed");
+        Require(ResourceLoader.Exists(rockRelic.CustomPackedIconPath), "Rock relic small icon is missing");
+        Require(ResourceLoader.Exists(rockRelic.CustomPackedIconOutlinePath), "Rock relic outline icon is missing");
+        Require(ResourceLoader.Exists(rockRelic.CustomBigIconPath), "Rock relic large icon is missing");
+
+        CardModel[] portraitCards =
+        [
+            .. rockCards.Take(5),
+            .. newCards,
+        ];
+
+        foreach (CardModel card in portraitCards)
         {
             Require(card.TitleLocString.Exists(), $"Title localization missing for {card.GetType().Name}");
             Require(card.Description.Exists(), $"Description localization missing for {card.GetType().Name}");
@@ -86,10 +142,12 @@ public static class RuntimeContentDiagnosticsPatch
 
         ValidateIsolatedCombatHooks();
         ValidateCardSaveRoundTrips();
+        ValidateRelicSaveRoundTrip();
 
         MainFile.Logger.Info(
-            "Runtime content validation passed: 5 custom card portraits, 4 powers with both icon sizes, 6 Rock tags, "
-            + "localization, Exhaust, isolated two-player hooks, and card save round-trips.");
+            "Runtime content validation passed: 4 original Ironclad cards, 9 custom card portraits, "
+            + "5 powers with both icon sizes, 1 Ironclad relic, 10 Rock tags, localization, Exhaust, "
+            + "isolated two-player hooks, and card/relic save round-trips.");
     }
 
     private static void ValidateIsolatedCombatHooks()
@@ -106,6 +164,7 @@ public static class RuntimeContentDiagnosticsPatch
         GiantRock ownedRock = combatState.CreateCard<GiantRock>(playerOne);
         GiantRock otherPlayersRock = combatState.CreateCard<GiantRock>(playerTwo);
         StrikeIronclad ordinaryAttack = combatState.CreateCard<StrikeIronclad>(playerOne);
+        HiddenRock hiddenRock = combatState.CreateCard<HiddenRock>(playerOne);
 
         int mixedAmount = RockFormPower.ApplicationAmount(upgraded: false)
             + RockFormPower.ApplicationAmount(upgraded: true);
@@ -125,6 +184,10 @@ public static class RuntimeContentDiagnosticsPatch
             !rockForm.TryModifyEnergyCostInCombat(otherPlayersRock, 2m, out decimal otherPlayerCost)
                 && otherPlayerCost == 2m,
             "Rock Form must not reduce another player's Rock cards");
+        Require(
+            rockForm.TryModifyEnergyCostInCombat(hiddenRock, 1m, out decimal hiddenRockCost)
+                && hiddenRockCost == 0m,
+            "Rock Form must reduce an original Rock card's cost");
 
         var absoluteRock = (AbsoluteRockPower)ModelDb.Power<AbsoluteRockPower>().ToMutable();
         absoluteRock.ApplyInternal(playerOne.Creature, 12, silent: true);
@@ -137,6 +200,16 @@ public static class RuntimeContentDiagnosticsPatch
         Require(
             absoluteRock.ModifyDamageAdditive(null, 0m, ValueProp.Move, playerTwo.Creature, ownedRock) == 0m,
             "Absolute Rock must not increase another player's damage");
+
+        int mixedChargeAmount = RockChargeNextTurnPower.ApplicationAmount(upgraded: false)
+            + RockChargeNextTurnPower.ApplicationAmount(upgraded: true);
+        var rockCharge = (RockChargeNextTurnPower)ModelDb.Power<RockChargeNextTurnPower>().ToMutable();
+        rockCharge.ApplyInternal(playerOne.Creature, mixedChargeAmount, silent: true);
+        Require(rockCharge.DisplayAmount == 2, "mixed Rock Charge sources must display as 2 stacks");
+        Require(
+            RockChargeNextTurnPower.NormalSources(rockCharge.Amount) == 1
+                && RockChargeNextTurnPower.UpgradedSources(rockCharge.Amount) == 1,
+            "Rock Charge must preserve one normal and one upgraded source");
     }
 
     private static void ValidateCardSaveRoundTrips()
@@ -148,6 +221,10 @@ public static class RuntimeContentDiagnosticsPatch
             ModelDb.Card<StoneArmor>().ToMutable(),
             ModelDb.Card<Juggernaut>().ToMutable(),
             ModelDb.Card<BodySlam>().ToMutable(),
+            ModelDb.Card<HiddenRock>().ToMutable(),
+            ModelDb.Card<InevitableRock>().ToMutable(),
+            ModelDb.Card<RockFive>().ToMutable(),
+            ModelDb.Card<RockCharge>().ToMutable(),
         ];
 
         foreach (CardModel card in mutableCards)
@@ -157,6 +234,13 @@ public static class RuntimeContentDiagnosticsPatch
                 restored.GetType() == card.GetType(),
                 $"save round-trip changed {card.GetType().Name} into {restored.GetType().Name}");
         }
+    }
+
+    private static void ValidateRelicSaveRoundTrip()
+    {
+        RelicModel relic = ModelDb.Relic<Rock>().ToMutable();
+        RelicModel restored = RelicModel.FromSerializable(relic.ToSerializable());
+        Require(restored is Rock, "save round-trip changed the Rock relic type");
     }
 
     private static void Require(bool condition, string message)

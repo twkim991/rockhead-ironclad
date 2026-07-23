@@ -10,5 +10,8 @@
   "THROWROCKIRONCLAD-ROCK_ARMOR_POWER.smartDescription": "거대한 바위 카드를 사용할 때마다 방어도를 {Amount} 얻습니다.",
   "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.title": "절대적인 바위",
   "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.description": "거대한 바위의 피해가 {Amount} 증가합니다.",
-  "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.smartDescription": "거대한 바위의 피해가 {Amount} 증가합니다."
+  "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.smartDescription": "거대한 바위의 피해가 {Amount} 증가합니다.",
+  "THROWROCKIRONCLAD-ROCK_CHARGE_NEXT_TURN_POWER.title": "바위 충전",
+  "THROWROCKIRONCLAD-ROCK_CHARGE_NEXT_TURN_POWER.description": "다음 턴 시작 시, 예약된 거대한 바위 카드를 손으로 가져옵니다.",
+  "THROWROCKIRONCLAD-ROCK_CHARGE_NEXT_TURN_POWER.smartDescription": "다음 턴 시작 시, 예약된 거대한 바위 카드를 손으로 가져옵니다."
 }
