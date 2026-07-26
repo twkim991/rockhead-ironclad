@@ -9,6 +9,9 @@ using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.RelicPools;
+#if THROW_ROCK_GAME_0_109
+using MegaCrit.Sts2.Core.Multiplayer.Serialization;
+#endif
 using MegaCrit.Sts2.Core.Unlocks;
 using MegaCrit.Sts2.Core.ValueProps;
 using ThrowRockIronclad.ThrowRockIroncladCode.Cards;
@@ -19,7 +22,11 @@ using ThrowRockIronclad.ThrowRockIroncladCode.Relics;
 
 namespace ThrowRockIronclad.ThrowRockIroncladCode.Compatibility;
 
+#if THROW_ROCK_GAME_0_109
+[HarmonyPatch(typeof(ModelIdSerializationCache), nameof(ModelIdSerializationCache.Init))]
+#else
 [HarmonyPatch(typeof(ModelDb), nameof(ModelDb.Init))]
+#endif
 public static class RuntimeContentDiagnosticsPatch
 {
     [HarmonyPostfix]

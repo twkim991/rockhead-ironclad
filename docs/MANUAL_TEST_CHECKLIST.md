@@ -1,11 +1,14 @@
 # 돌머리 아이언클래드 수동 테스트 체크리스트
 
-기준 버전: Slay the Spire 2 `v0.107.1`, 모드 `v0.2.0` (외부 모드 의존성 없음)
+기준 버전: Slay the Spire 2 정식 `v0.107.1` 및 공개 베타 `v0.109.x`, 모드 `v0.2.1` (외부 모드 의존성 없음)
 
 ## 자동 검증 완료
 
 - [x] Release 빌드: 경고 0, 오류 0
-- [x] Release Publish 결과에 DLL, PCK, JSON 포함
+- [x] Release Publish 결과에 로더, 정식/베타 DLL, PCK, JSON 포함
+- [x] 동일 배포본이 정식 `v0.107.1`에서 0.107.1 DLL을 선택하고 메인 메뉴에 진입
+- [x] 동일 배포본이 공개 베타 `v0.109.1`에서 0.109.0 DLL을 선택하고 메인 메뉴에 진입
+- [x] 두 게임 버전 모두 런타임 콘텐츠 및 카드·유물 저장 왕복 진단 통과
 - [x] Harmony 대상 메서드 전체 패치 성공
 - [x] 대상 10종 Rock 태그 및 PrimalForce 제외 확인
 - [x] 기존 다섯 카드와 신규 네 카드의 비용, DynamicVar, 강화 규칙 확인
@@ -48,7 +51,7 @@
 자동 스모크 테스트 실행:
 
 ```powershell
-& '.\.tools\dotnet\dotnet.exe' run --project tests\ThrowRockIronclad.SmokeTests\ThrowRockIronclad.SmokeTests.csproj -c Release
+& '.\.workspace\sdk\dotnet\dotnet.exe' run --project tests\ThrowRockIronclad.SmokeTests\ThrowRockIronclad.SmokeTests.csproj -c Release
 ```
 
 컴파일 타임 전체 게임 통합 테스트는 `THROW_ROCK_SELF_TEST` 상수와 같은 이름의 환경 변수를 사용한다. 일반 Release에는 테스트 코드가 포함되지 않는다. 렌더 결과는 `tests/artifacts/full-game-integration.png`에 저장된다.

@@ -29,15 +29,37 @@
 
 ## 배포 파일
 
-`dotnet publish -c Release` 후 다음 세 파일을 배포한다.
+정식·공개 베타를 모두 지원하는 번들은 다음 명령으로 생성한다.
 
-```text
-ThrowRockIronclad.dll
-ThrowRockIronclad.pck
-ThrowRockIronclad.json
+```powershell
+.\scripts\build\build-compat-bundle.ps1
 ```
 
-게임 설치 폴더에는 동일 파일과 디버깅용 PDB가 `mods/ThrowRockIronclad/`에 복사된다. 별도로 설치해야 하는 라이브러리 모드는 없다.
+이 명령은 `.workspace/game-references/`에 미리 저장한 정식 `0.107.x`와 공개 베타 `0.109.x` 참조를 자동으로 찾는다. Steam 브랜치를 각 버전으로 전환했을 때 한 번씩 다음 명령을 실행해 참조를 저장한다.
+
+```powershell
+.\scripts\setup\cache-game-reference.ps1 `
+    -GamePath "C:\path\to\Slay the Spire 2"
+```
+
+필요하면 `-StableGamePath`와 `-BetaGamePath`로 캐시 대신 사용할 경로를 명시할 수 있다.
+
+결과는 `.artifacts/packages/ThrowRockIronclad-vX.Y.Z/`와 같은 이름의 ZIP에 생성된다.
+
+```text
+ThrowRockIronclad-vX.Y.Z/
+├─ ThrowRockIronclad.dll
+├─ ThrowRockIronclad.pck
+├─ ThrowRockIronclad.json
+├─ throw-rock-ironclad-variants.manifest
+└─ lib/
+   ├─ 0.107.1/
+   │  └─ ThrowRockIronclad.dll
+   └─ 0.109.0/
+      └─ ThrowRockIronclad.dll
+```
+
+최상위 DLL은 실행 중인 게임 버전을 감지하는 로더이고, `lib` 아래의 DLL은 각 게임 버전에 맞춰 컴파일된 실제 모드다. ZIP의 폴더 구조를 유지해 `mods/ThrowRockIronclad/`에 설치한다. 별도로 설치해야 하는 라이브러리 모드는 없다.
 
 ## 검증 범위와 남은 한계
 

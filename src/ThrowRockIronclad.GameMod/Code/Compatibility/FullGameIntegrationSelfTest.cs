@@ -21,6 +21,7 @@ using MegaCrit.Sts2.Core.Multiplayer.Serialization;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Combat;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
@@ -45,8 +46,25 @@ internal static class FullGameIntegrationSelfTest
 {
     private const string EnabledEnvironmentVariable = "THROW_ROCK_SELF_TEST";
     private static bool _started;
+    private static int _generatedDiscardPreviewCalls;
     private static NGame Game => NGame.Instance
         ?? throw new InvalidOperationException("NGame is not initialized.");
+
+    [HarmonyPatch(
+        typeof(CardCmd),
+        nameof(CardCmd.PreviewCardPileAdd),
+        [typeof(CardPileAddResult), typeof(float), typeof(CardPreviewStyle)])]
+    private static class GeneratedDiscardPreviewProbe
+    {
+        [HarmonyPrefix]
+        private static void Count(CardPileAddResult result)
+        {
+            if (result.cardAdded is GiantRock && result.cardAdded.Pile?.Type == PileType.Discard)
+            {
+                _generatedDiscardPreviewCalls++;
+            }
+        }
+    }
 
     [HarmonyPostfix]
     private static void StartAfterMainMenuReady()
@@ -145,12 +163,16 @@ internal static class FullGameIntegrationSelfTest
 
         int hpBeforeSlam = target.CurrentHp;
         BodySlam rockSlam = await CreateInHand<BodySlam>(combatState, playerOne, upgraded: false);
+        int discardPreviewCallsBeforeSlam = _generatedDiscardPreviewCalls;
         await Play(rockSlam, choiceContext, target);
         Require(target.CurrentHp == hpBeforeSlam - 5, "Rock Slam must deal exactly 5 damage");
         Require(playerOne.PlayerCombatState!.ExhaustPile.Cards.Contains(rockSlam), "Rock Slam must Exhaust");
         Require(
             playerOne.PlayerCombatState.DiscardPile.Cards.Count(card => card is GiantRock && !card.IsUpgraded) == 1,
             "Rock Slam must create one normal Giant Rock in the discard pile");
+        Require(
+            _generatedDiscardPreviewCalls == discardPreviewCallsBeforeSlam + 1,
+            "Rock Slam must preview its generated discard card so the visible pile count can finish updating");
         Require(
             GiantRockHistory.CountFinishedPlaysThisCombat(playerOne.Creature, combatState) == 0,
             "creating a Giant Rock must not count as playing it");
@@ -215,11 +237,16 @@ internal static class FullGameIntegrationSelfTest
         RockFive rockFive = await CreateInHand<RockFive>(combatState, playerOne, upgraded: false);
         await Play(rockFive, choiceContext, target: null);
         Require(target.CurrentHp == hpBeforeRockFive - RockRules.RockFiveDamage, "Rock Five must deal exactly 5 damage");
-        Require(target.GetPowerAmount<VulnerablePower>() == 2, "Rock Five must apply exactly 2 Vulnerable");
+        Require(
+            combatState.HittableEnemies.All(enemy => enemy.GetPowerAmount<VulnerablePower>() == 2),
+            "Rock Five must apply exactly 2 Vulnerable to every enemy");
         Require(
             playerOne.PlayerCombatState!.Hand.Cards.OfType<GiantRock>().Single().IsUpgraded == false,
             "normal Rock Five must create a normal Giant Rock");
-        await PowerCmd.Remove<VulnerablePower>(target);
+        foreach (Creature enemy in combatState.HittableEnemies)
+        {
+            await PowerCmd.Remove<VulnerablePower>(enemy);
+        }
         await RemoveAllCombatCards(playerOne);
 
         int hpBeforeUpgradedRockFive = target.CurrentHp;
@@ -228,11 +255,44 @@ internal static class FullGameIntegrationSelfTest
         Require(
             target.CurrentHp == hpBeforeUpgradedRockFive - RockRules.RockFiveDamage,
             "Rock Five+ must still deal exactly 5 damage");
-        Require(target.GetPowerAmount<VulnerablePower>() == 2, "Rock Five+ must still apply exactly 2 Vulnerable");
+        Require(
+            combatState.HittableEnemies.All(enemy => enemy.GetPowerAmount<VulnerablePower>() == 2),
+            "Rock Five+ must still apply exactly 2 Vulnerable to every enemy");
         Require(
             playerOne.PlayerCombatState!.Hand.Cards.OfType<GiantRock>().Single().IsUpgraded,
             "Rock Five+ must create Giant Rock+");
-        await PowerCmd.Remove<VulnerablePower>(target);
+        foreach (Creature enemy in combatState.HittableEnemies)
+        {
+            await PowerCmd.Remove<VulnerablePower>(enemy);
+        }
+        await RemoveAllCombatCards(playerOne);
+
+        // Hextech Mayhem's Swift and Safe enemy rune grants Artifact to every enemy.
+        // Rock Five must respect that standard interaction: each Artifact blocks and
+        // is consumed by that enemy's Vulnerable application.
+        foreach (Creature enemy in combatState.HittableEnemies)
+        {
+            await PowerCmd.Apply<ArtifactPower>(choiceContext, enemy, 1, enemy, null);
+        }
+        Dictionary<Creature, int> artifactBeforeRockFive = combatState.HittableEnemies.ToDictionary(
+            enemy => enemy,
+            enemy => enemy.GetPowerAmount<ArtifactPower>());
+        RockFive artifactBlockedRockFive = await CreateInHand<RockFive>(
+            combatState,
+            playerOne,
+            upgraded: false);
+        await Play(artifactBlockedRockFive, choiceContext, target: null);
+        Require(
+            combatState.HittableEnemies.All(enemy => enemy.GetPowerAmount<VulnerablePower>() == 0),
+            "Artifact must block Rock Five's Vulnerable on every protected enemy");
+        Require(
+            combatState.HittableEnemies.All(
+                enemy => enemy.GetPowerAmount<ArtifactPower>() == artifactBeforeRockFive[enemy] - 1),
+            "Rock Five's blocked Vulnerable must consume one Artifact from every enemy");
+        foreach (Creature enemy in combatState.HittableEnemies)
+        {
+            await PowerCmd.Remove<ArtifactPower>(enemy);
+        }
         await RemoveAllCombatCards(playerOne);
 
         int blockBeforeRockCharge = playerOne.Creature.Block;
@@ -309,13 +369,21 @@ internal static class FullGameIntegrationSelfTest
         Require(playerOne.PlayerCombatState.ExhaustPile.Cards.Contains(secondRockSlam), "upgraded Rock Slam must Exhaust");
 
         int blockBeforeRockade = playerOne.Creature.Block;
+#if THROW_ROCK_GAME_0_109
+        await Hook.BeforeSideTurnEnd(combatState, CombatSide.Player, [playerOne.Creature, playerTwo.Creature]);
+#else
         await Hook.BeforeTurnEnd(combatState, CombatSide.Player, [playerOne.Creature, playerTwo.Creature]);
+#endif
         Require(playerOne.Creature.Block == blockBeforeRockade + 15, "mixed Rockade must grant 15 Block for three finished Giant Rock plays, including the pre-Power play");
 
         GiantRock cumulativeRock = await CreateInHand<GiantRock>(combatState, playerOne, upgraded: false);
         await Play(cumulativeRock, choiceContext, target);
         int blockBeforeSecondRockade = playerOne.Creature.Block;
+#if THROW_ROCK_GAME_0_109
+        await Hook.BeforeSideTurnEnd(combatState, CombatSide.Player, [playerOne.Creature, playerTwo.Creature]);
+#else
         await Hook.BeforeTurnEnd(combatState, CombatSide.Player, [playerOne.Creature, playerTwo.Creature]);
+#endif
         Require(playerOne.Creature.Block == blockBeforeSecondRockade + 20, "Rockade must use the updated whole-combat total on a later turn end");
 
         int handBeforeRockForm = playerOne.PlayerCombatState.Hand.Cards.Count;

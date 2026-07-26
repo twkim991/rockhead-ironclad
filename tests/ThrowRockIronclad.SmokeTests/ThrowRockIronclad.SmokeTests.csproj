@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <GameDataDir>F:\SteamLibrary\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64</GameDataDir>
-    <GodotProjectDir>$(MSBuildProjectDirectory)\..\..</GodotProjectDir>
+    <GodotProjectDir>$(MSBuildProjectDirectory)\..\..\src\ThrowRockIronclad.GameMod</GodotProjectDir>
     <RunAnalyzers>false</RunAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>
     <CompilerVisibleProperty Include="GodotProjectDir" />
-    <ProjectReference Include="..\..\ThrowRockIronclad.csproj" />
+    <ProjectReference Include="..\..\src\ThrowRockIronclad.GameMod\ThrowRockIronclad.csproj" />
     <Reference Include="0Harmony" HintPath="$(GameDataDir)\0Harmony.dll" Private="true" />
     <Reference Include="GodotSharp" HintPath="$(GameDataDir)\GodotSharp.dll" Private="true" />
     <Reference Include="sts2" HintPath="$(GameDataDir)\sts2.dll" Private="true" />

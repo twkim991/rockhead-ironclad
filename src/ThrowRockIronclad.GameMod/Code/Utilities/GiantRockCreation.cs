@@ -21,7 +21,14 @@ public static class GiantRockCreation
             CardCmd.Upgrade(rock);
         }
 
-        await CardPileCmd.AddGeneratedCardToCombat(rock, destination, owner);
+        CardPileAddResult addResult = await CardPileCmd.AddGeneratedCardToCombat(rock, destination, owner);
+        if (destination != PileType.Hand)
+        {
+            // Non-hand combat piles update their visible count when the add-preview
+            // animation raises CardAddFinished, not when the model enters the pile.
+            CardCmd.PreviewCardPileAdd(addResult, 1.2f);
+        }
+
         return rock;
     }
 }

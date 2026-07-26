@@ -3,7 +3,7 @@
   "name": "돌머리 아이언클래드",
   "author": "s_twkim991",
   "description": "아이언클래드를 거대한 바위 중심의 카드와 유물 시너지 덱으로 재구성합니다.",
-  "version": "v0.2.0",
+  "version": "v0.2.1",
   "min_game_version": "0.107.1",
   "has_pck": true,
   "has_dll": true,

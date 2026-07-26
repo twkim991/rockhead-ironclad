@@ -1,4 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Creatures;
+#if THROW_ROCK_GAME_0_109
+using MegaCrit.Sts2.Core.Entities.Cards;
+#endif
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -17,6 +20,10 @@ public sealed class AbsoluteRockPower : ThrowRockIroncladPower
         decimal amount,
         ValueProp props,
         Creature? dealer,
-        CardModel? cardSource)
+        CardModel? cardSource
+#if THROW_ROCK_GAME_0_109
+        , CardPlay? cardPlay = null
+#endif
+        )
         => dealer == Owner && cardSource is GiantRock ? Amount : 0m;
 }

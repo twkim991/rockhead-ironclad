@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\..\build\msbuild\Sts2PathDiscovery.props"/>
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <AssemblyName>ThrowRockIronclad.Loader</AssemblyName>
+        <RootNamespace>ThrowRockIronclad.Loader</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    </PropertyGroup>
+
+    <ItemGroup Condition="Exists('$(Sts2DataDir)')">
+        <Reference Include="0Harmony">
+            <HintPath>$(Sts2DataDir)/0Harmony.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="sts2">
+            <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="LoaderBootstrap.cs"/>
+    </ItemGroup>
+
+    <Target Name="CheckDependencyPaths" BeforeTargets="ResolveReferences">
+        <Error
+            Text="Slay the Spire 2 data not found at path '$(Sts2DataDir)'"
+            Condition="'$(Sts2DataDir)' == '' or !Exists('$(Sts2DataDir)')" />
+    </Target>
+</Project>

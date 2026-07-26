@@ -70,7 +70,11 @@ public static class BodySlamPatch
         {
             ArgumentNullException.ThrowIfNull(cardPlay.Target);
             await DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
-                .FromCard(card)
+                .FromCard(card
+#if THROW_ROCK_GAME_0_109
+                    , cardPlay
+#endif
+                )
                 .Targeting(cardPlay.Target)
                 .WithHitFx("vfx/vfx_attack_blunt", null, "blunt_attack.mp3")
                 .Execute(choiceContext);

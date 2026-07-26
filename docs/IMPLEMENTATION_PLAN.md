@@ -387,79 +387,38 @@ public static class RockCardRegistry
 ```text
 throw_rock_ironclad/
 ├─ ThrowRockIronclad.sln
-├─ ThrowRockIronclad.csproj
-├─ ThrowRockIronclad.json
 ├─ Directory.Build.props
-├─ Sts2PathDiscovery.props
-├─ project.godot
-├─ export_presets.cfg
-│
-├─ ThrowRockIroncladCode/
-│  ├─ MainFile.cs
-│  │
-│  ├─ Core/
-│  │  ├─ ModInfo.cs
-│  │  ├─ RockTags.cs
-│  │  ├─ RockCardRegistry.cs
-│  │  └─ RockRules.cs
-│  │
-│  ├─ Powers/
-│  │  ├─ ThrowRockIroncladPower.cs
-│  │  ├─ RockadePower.cs
-│  │  ├─ RockFormPower.cs
-│  │  ├─ RockArmorPower.cs
-│  │  └─ AbsoluteRockPower.cs
-│  │
-│  ├─ Patches/
-│  │  ├─ RockTagPatch.cs
-│  │  ├─ Cards/
-│  │  │  ├─ BarricadePatch.cs
-│  │  │  ├─ DemonFormPatch.cs
-│  │  │  ├─ StoneArmorPatch.cs
-│  │  │  ├─ JuggernautPatch.cs
-│  │  │  └─ BodySlamPatch.cs
-│  │  └─ Presentation/
-│  │     ├─ CardLocalizationPatch.cs
-│  │     ├─ CardHoverTipPatch.cs
-│  │     ├─ CardPortraitPatch.cs
-│  │     └─ RockPowerAssetPreloadPatch.cs
-│  │
-│  ├─ Utilities/
-│  │  ├─ GiantRockHistory.cs
-│  │  └─ GiantRockCreation.cs
-│  │
-│  ├─ Compatibility/
-│  │  ├─ SupportedGameVersion.cs
-│  │  └─ PatchCompatibilityDiagnostics.cs
-│  │
-│  └─ Extensions/
-│     └─ StringExtensions.cs
-│
-├─ ThrowRockIronclad/
-│  ├─ localization/
-│  │  ├─ kor/
-│  │  │  ├─ cards.json
-│  │  │  └─ powers.json
-│  │  └─ eng/
-│  │     ├─ cards.json
-│  │     └─ powers.json
-│  └─ images/
-│     ├─ card_portraits/       # 교체 카드 5종 적용
-│     └─ powers/               # Power별 64×64 및 big/ 256×256 아이콘
-│
+├─ src/
+│  ├─ ThrowRockIronclad.GameMod/
+│  │  ├─ ThrowRockIronclad.csproj
+│  │  ├─ ThrowRockIronclad.json
+│  │  ├─ project.godot
+│  │  ├─ export_presets.cfg
+│  │  ├─ Code/
+│  │  │  ├─ Cards/
+│  │  │  ├─ Compatibility/
+│  │  │  ├─ Core/
+│  │  │  ├─ Patches/
+│  │  │  ├─ Powers/
+│  │  │  ├─ Relics/
+│  │  │  └─ Utilities/
+│  │  └─ ThrowRockIronclad/
+│  │     ├─ images/
+│  │     └─ localization/
+│  └─ ThrowRockIronclad.Loader/
+│     ├─ ThrowRockIronclad.Loader.csproj
+│     └─ LoaderBootstrap.cs
 ├─ tests/
-│  └─ ThrowRockIronclad.Tests/
-│     ├─ RockCardRegistryTests.cs
-│     ├─ RockRulesTests.cs
-│     ├─ RockLocalizationContractTests.cs
-│     └─ PowerCalculationTests.cs
-│
+│  └─ ThrowRockIronclad.SmokeTests/
 ├─ docs/
-│  ├─ IMPLEMENTATION_PLAN.md
-│  ├─ MANUAL_TEST_CHECKLIST.md
-│  └─ COMPATIBILITY.md
-│
-└─ SOURCES/                    # 읽기 전용 참고 자료, Git 및 빌드 제외
+├─ scripts/
+│  ├─ setup/
+│  ├─ build/
+│  └─ release/
+├─ build/
+│  └─ msbuild/
+├─ .artifacts/                 # 로컬 패키지와 Workshop 작업 폴더, Git 제외
+└─ .workspace/                 # SDK·게임 버전별 참조·로그·임시 파일, Git 제외
 ```
 
 ## 8. Power 구현 상세
@@ -786,7 +745,7 @@ Power 키도 같은 방식으로 namespaced 처리한다.
 - 게임 및 MegaDot 경로 설정
 - 외부 모드 의존성이 없는 매니페스트 구성
 - 매니페스트 작성
-- `SOURCES/`, 빌드 결과물, 로컬 경로 설정 파일을 `.gitignore`에 추가
+- `.workspace/references/`, 빌드 결과물, 로컬 경로 설정 파일을 `.gitignore`에 추가
 - 빈 DLL/PCK를 Publish하여 게임 Mod Settings에서 로드 확인
 
 완료 조건:
@@ -1077,7 +1036,7 @@ Power 키도 같은 방식으로 namespaced 처리한다.
 
 ### 15.4 원본 리소스
 
-`SOURCES/`는 분석용으로만 사용한다.
+`.workspace/references/`는 분석용으로만 사용한다.
 
 - 빌드에 포함하지 않는다.
 - Git에 커밋하지 않는다.

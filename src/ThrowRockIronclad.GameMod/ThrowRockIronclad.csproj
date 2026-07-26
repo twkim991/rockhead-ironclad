@@ -1,11 +1,18 @@
 ﻿<Project Sdk="Godot.NET.Sdk/4.5.1" InitialTargets="CheckDependencyPaths">
-    <Import Project=".\Sts2PathDiscovery.props"/>
+    <Import Project="..\..\build\msbuild\Sts2PathDiscovery.props"/>
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
-        <Version>0.2.0</Version>
+        <Version>0.2.1</Version>
+        <Configurations>Debug;Release;ExportDebug;ExportRelease</Configurations>
         <ImplicitUsings>true</ImplicitUsings>
         <Nullable>enable</Nullable> <!--Makes code analysis regarding null values stricter.-->
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <DetectedReleaseInfo Condition="Exists('$(Sts2Path)/release_info.json')">$([System.IO.File]::ReadAllText('$(Sts2Path)/release_info.json'))</DetectedReleaseInfo>
+        <Sts2CompatibilityTarget
+            Condition="'$(Sts2CompatibilityTarget)' == '' And $([System.String]::Copy('$(DetectedReleaseInfo)').Contains('v0.109.'))">0.109.0</Sts2CompatibilityTarget>
+        <Sts2CompatibilityTarget Condition="'$(Sts2CompatibilityTarget)' == ''">0.107.1</Sts2CompatibilityTarget>
+        <InstallModOnBuild Condition="'$(InstallModOnBuild)' == ''">true</InstallModOnBuild>
+        <DefineConstants Condition="'$(Sts2CompatibilityTarget)' == '0.109.0'">$(DefineConstants);THROW_ROCK_GAME_0_109</DefineConstants>
 
         <AppOutputBase>$(MSBuildProjectDirectory)\</AppOutputBase>
         <PathMap>$(AppOutputBase)=.\</PathMap>
@@ -45,6 +52,7 @@
 
     <ItemGroup>
         <Compile Remove="ThrowRockIronclad/**" />
+        <Compile Remove="obj/**" />
         <Compile Remove="materials/**" />
         <Compile Remove="shaders/**" />
         <Compile Remove="images/**" />
@@ -56,8 +64,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Condition="Exists('Directory.Build.props')" Include="Directory.Build.props"/>
-        <None Include=".gitignore" />
+        <None Condition="Exists('..\..\Directory.Build.props')" Include="..\..\Directory.Build.props" Link="Directory.Build.props"/>
+        <None Include="..\..\.gitignore" Link=".gitignore" />
         <None Include="ThrowRockIronclad.json" />
         <None Include="project.godot"/>
         <None Include="ThrowRockIronclad/**" />
@@ -68,6 +76,13 @@
       <Folder Include="ThrowRockIronclad\images\powers\big\" />
       <Folder Include="ThrowRockIronclad\images\relics\big\" />
     </ItemGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+            <_Parameter1>ThrowRockCompatibilityTarget</_Parameter1>
+            <_Parameter2>$(Sts2CompatibilityTarget)</_Parameter2>
+        </AssemblyAttribute>
+    </ItemGroup>
     
     <Target Name="CheckDependencyPaths" >
         <Error
@@ -75,14 +90,14 @@
                 Condition="'$(Sts2DataDir)' == '' or !Exists('$(Sts2DataDir)')" />
     </Target>
 
-    <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent">
+    <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent" Condition="'$(InstallModOnBuild)' == 'true'">
         <Message Text="Copying .dll .pdb and .json to mods folder." Importance="high" />
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
         <Copy SourceFiles="$(AssemblyName).json" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
         <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
     </Target>
 
-    <Target Name="CopyQuickPck" AfterTargets="PackPck" Condition="Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'">
+    <Target Name="CopyQuickPck" AfterTargets="PackPck" Condition="'$(InstallModOnBuild)' == 'true' And Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'">
         <Message Text="Copying quick .pck to mods folder." Importance="high"/>
         <Copy SourceFiles="$(PckPackerOutputPath)"
               DestinationFolder="$(ModsPath)/$(MSBuildProjectName)" />

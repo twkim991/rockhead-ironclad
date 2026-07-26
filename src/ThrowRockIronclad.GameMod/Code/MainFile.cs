@@ -25,9 +25,8 @@ public partial class MainFile : Node
         //Godot.Bridge.ScriptManagerBridge.LookupScriptsInAssembly(Assembly.GetExecutingAssembly());
         
         string runningVersion = ReleaseInfoManager.Instance.SemVer?.ToString() ?? "unknown";
-        string normalizedRunningVersion = runningVersion.TrimStart('v');
         Logger.Info($"Initializing {ModId}; supported game version={ModInfo.SupportedGameVersion}, running={runningVersion}");
-        if (runningVersion != "unknown" && normalizedRunningVersion != ModInfo.SupportedGameVersion)
+        if (runningVersion != "unknown" && !ModInfo.SupportsGameVersion(runningVersion))
         {
             Logger.Warn($"Game version {runningVersion} has not been validated. Expected {ModInfo.SupportedGameVersion}.");
         }

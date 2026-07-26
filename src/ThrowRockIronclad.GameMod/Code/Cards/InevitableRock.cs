@@ -36,7 +36,11 @@ public sealed class InevitableRock : ThrowRockIroncladCard
             Owner.Creature,
             DynamicVars.HpLoss.BaseValue,
             ValueProp.Unblockable | ValueProp.Unpowered | ValueProp.Move,
-            this);
+            this
+#if THROW_ROCK_GAME_0_109
+            , cardPlay
+#endif
+            );
         await CreatureCmd.TriggerAnim(Owner.Creature, "Cast", Owner.Character.CastAnimDelay);
         await GiantRockCreation.AddToCombat(CombatState!, Owner, PileType.Hand, IsUpgraded);
     }

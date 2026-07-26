@@ -59,17 +59,38 @@ Slay the Spire 2/
    └─ ThrowRockIronclad/
       ├─ ThrowRockIronclad.dll
       ├─ ThrowRockIronclad.pck
-      └─ ThrowRockIronclad.json
+      ├─ ThrowRockIronclad.json
+      └─ lib/
+         ├─ 0.107.1/
+         │  └─ ThrowRockIronclad.dll
+         └─ 0.109.0/
+            └─ ThrowRockIronclad.dll
 ```
 
 ## 호환성
 
-- 현재 버전: `v0.2.0`
+- 현재 버전: `v0.2.1`
 - 최소 게임 버전: `v0.107.1`
+- 검증한 게임 버전: 정식 `v0.107.1`, 공개 베타 `v0.109.x`
 - 외부 모드 의존성: 없음
+
+배포본은 실행 중인 게임 버전을 감지해 정식 버전용 DLL과 공개 베타용 DLL 중 하나를 자동으로 불러옵니다. `lib` 폴더를 빼고 설치하면 모드가 로드되지 않으므로 ZIP의 폴더 구조를 그대로 유지하세요.
 
 바리케이드, 악마의 형상, 돌 갑옷, 절대적인 힘 또는 몸통 박치기를 변경하는 다른 모드와는 충돌할 수 있습니다.
 
 *Slay the Spire 2*가 얼리 액세스 중이므로 게임 업데이트 후 모드 업데이트가 필요할 수 있습니다.
+
+## 개발 구조
+
+- `src/ThrowRockIronclad.GameMod`: 게임 버전별 실제 모드 코드와 Godot 리소스
+- `src/ThrowRockIronclad.Loader`: 실행 중인 게임 버전에 맞는 DLL을 선택하는 로더
+- `tests`: 자동 스모크 테스트
+- `scripts/setup`: 현재 설치된 게임 버전의 빌드 참조 캐시
+- `scripts/build`: 정식·공개 베타 통합 배포본 생성
+- `scripts/release`: Steam Workshop 작업 폴더 준비와 선택적 업로드
+- `.workspace`: 로컬 SDK·게임 버전별 빌드 참조·로그(버전 관리 제외)
+- `.artifacts`: 패키지·Workshop 산출물(버전 관리 제외)
+
+개발용 전체 솔루션은 `ThrowRockIronclad.sln`이며, 호환성 배포본 생성 방법은 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)에 정리되어 있습니다.
 
 버전별 변경 내용은 [CHANGELOG.md](CHANGELOG.md)에서 확인할 수 있습니다.
