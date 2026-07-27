@@ -1,8 +1,11 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
+using ThrowRockIronclad.ThrowRockIroncladCode.CardPools;
 using ThrowRockIronclad.ThrowRockIroncladCode.Cards;
+using ThrowRockIronclad.ThrowRockIroncladCode.Characters;
 using ThrowRockIronclad.ThrowRockIroncladCode.Powers;
+using ThrowRockIronclad.ThrowRockIroncladCode.RelicPools;
 using ThrowRockIronclad.ThrowRockIroncladCode.Relics;
 
 namespace ThrowRockIronclad.ThrowRockIroncladCode.Patches.Presentation;
@@ -25,7 +28,10 @@ public static class RockPowerModelPatch
         {
             if ((typeof(ThrowRockIroncladPower).IsAssignableFrom(type)
                     || typeof(ThrowRockIroncladCard).IsAssignableFrom(type)
-                    || typeof(ThrowRockIroncladRelic).IsAssignableFrom(type))
+                    || typeof(ThrowRockIroncladRelic).IsAssignableFrom(type)
+                    || type == typeof(Rockclad)
+                    || type == typeof(RockcladCardPool)
+                    || type == typeof(RockcladRelicPool))
                 && !__result.StartsWith(IdPrefix, StringComparison.Ordinal))
             {
                 __result = IdPrefix + __result;

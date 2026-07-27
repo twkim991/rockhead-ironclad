@@ -13,5 +13,11 @@
   "THROWROCKIRONCLAD-ABSOLUTE_ROCK_POWER.smartDescription": "Giant Rocks deal {Amount} additional damage.",
   "THROWROCKIRONCLAD-ROCK_CHARGE_NEXT_TURN_POWER.title": "Rock Charge",
   "THROWROCKIRONCLAD-ROCK_CHARGE_NEXT_TURN_POWER.description": "At the start of your next turn, add the stored Giant Rocks to your hand.",
-  "THROWROCKIRONCLAD-ROCK_CHARGE_NEXT_TURN_POWER.smartDescription": "At the start of your next turn, add the stored Giant Rocks to your hand."
+  "THROWROCKIRONCLAD-ROCK_CHARGE_NEXT_TURN_POWER.smartDescription": "At the start of your next turn, add the stored Giant Rocks to your hand.",
+  "THROWROCKIRONCLAD-CREATIVE_ARTIFICIAL_ROCK_POWER.title": "Creative Artificial Rock",
+  "THROWROCKIRONCLAD-CREATIVE_ARTIFICIAL_ROCK_POWER.description": "At the start of your turn, add random Rock cards to your hand.",
+  "THROWROCKIRONCLAD-CREATIVE_ARTIFICIAL_ROCK_POWER.smartDescription": "At the start of your turn, add {Amount} random Rock cards to your hand.",
+  "THROWROCKIRONCLAD-ROCK_CASTLE_POWER.title": "Rock Castle",
+  "THROWROCKIRONCLAD-ROCK_CASTLE_POWER.description": "Giant Rock gains Replay.",
+  "THROWROCKIRONCLAD-ROCK_CASTLE_POWER.smartDescription": "Giant Rock gains {Amount} Replay."
 }

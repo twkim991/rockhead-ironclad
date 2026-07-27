@@ -8,16 +8,20 @@ public static class RockCardRegistry
 {
     private static readonly HashSet<Type> RockCardTypes =
     [
-        typeof(Barricade),
-        typeof(DemonForm),
-        typeof(StoneArmor),
-        typeof(Juggernaut),
-        typeof(BodySlam),
+        typeof(Rockade),
+        typeof(RockForm),
+        typeof(RockArmor),
+        typeof(AbsoluteRock),
+        typeof(RockSlam),
         typeof(GiantRock),
         typeof(HiddenRock),
         typeof(InevitableRock),
         typeof(RockFive),
         typeof(RockCharge),
+        typeof(RockTrap),
+        typeof(AllForRock),
+        typeof(CreativeArtificialRock),
+        typeof(RockCastle),
     ];
 
     public static bool ShouldHaveRockTag(CardModel card) => RockCardTypes.Contains(card.GetType());

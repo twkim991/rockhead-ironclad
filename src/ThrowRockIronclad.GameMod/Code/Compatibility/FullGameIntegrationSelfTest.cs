@@ -29,6 +29,7 @@ using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Unlocks;
 using ThrowRockIronclad.ThrowRockIroncladCode.Cards;
+using ThrowRockIronclad.ThrowRockIroncladCode.Characters;
 using ThrowRockIronclad.ThrowRockIroncladCode.Core;
 using ThrowRockIronclad.ThrowRockIroncladCode.Patches.Presentation;
 using ThrowRockIronclad.ThrowRockIroncladCode.Powers;
@@ -103,9 +104,9 @@ internal static class FullGameIntegrationSelfTest
 
     private static async Task Execute()
     {
-        CharacterModel ironclad = ModelDb.Character<Ironclad>();
-        Player playerOne = Player.CreateForNewRun<Ironclad>(UnlockState.all, 1UL);
-        Player playerTwo = Player.CreateForNewRun<Ironclad>(UnlockState.all, 2UL);
+        CharacterModel rockclad = ModelDb.Character<Rockclad>();
+        Player playerOne = Player.CreateForNewRun<Rockclad>(UnlockState.all, 1UL);
+        Player playerTwo = Player.CreateForNewRun<Rockclad>(UnlockState.all, 2UL);
         List<ActModel> acts = ActModel.GetDefaultList().Select(act => act.ToMutable()).ToList();
         RunState runState = RunState.CreateForNewRun(
             [playerOne, playerTwo],
@@ -120,7 +121,7 @@ internal static class FullGameIntegrationSelfTest
         RunManager.Instance.SetUpNewSingleplayer(runState, shouldSave: false);
         ValidateRunSaveRoundTrip(runState, playerOne);
 
-        await PreloadManager.LoadRunAssets([ironclad]);
+        await PreloadManager.LoadRunAssets([rockclad]);
         var rockRelic = playerOne.GetRelic<Rock>()
             ?? throw new InvalidOperationException("Rock relic was not added to the test player.");
         Require(
@@ -161,8 +162,65 @@ internal static class FullGameIntegrationSelfTest
         target.SetCurrentHpInternal(999);
         var choiceContext = new ThrowingPlayerChoiceContext();
 
+        GiantRock trappedRockOne = combatState.CreateCard<GiantRock>(playerTwo);
+        GiantRock trappedRockTwo = combatState.CreateCard<GiantRock>(playerTwo);
+        await CardPileCmd.AddGeneratedCardsToCombat(
+            [trappedRockOne, trappedRockTwo],
+            PileType.Discard,
+            playerTwo);
+        int hpBeforeRockTrap = target.CurrentHp;
+        RockTrap rockTrap = await CreateInHand<RockTrap>(combatState, playerTwo, upgraded: true);
+        await Play(rockTrap, choiceContext, target);
+        Require(
+            target.CurrentHp == hpBeforeRockTrap - 40,
+            "Rock Trap+ must upgrade and play both discarded Giant Rocks on the target");
+        Require(
+            playerTwo.PlayerCombatState!.DiscardPile.Cards
+                .OfType<GiantRock>()
+                .Count(card => card.IsUpgraded) == 2,
+            "Rock Trap+ must return both upgraded Giant Rocks to the discard pile after playing them");
+
+        int hpBeforeAllForRock = target.CurrentHp;
+        AllForRock allForRock = await CreateInHand<AllForRock>(combatState, playerTwo, upgraded: true);
+        await Play(allForRock, choiceContext, target);
+        Require(target.CurrentHp == hpBeforeAllForRock - 14, "All for Rock+ must deal exactly 14 damage");
+        Require(
+            playerTwo.PlayerCombatState.Hand.Cards.OfType<GiantRock>().Count() == 2
+                && !playerTwo.PlayerCombatState.DiscardPile.Cards.OfType<GiantRock>().Any(),
+            "All for Rock must move every discarded Giant Rock into the hand");
+        await RemoveAllCombatCards(playerTwo);
+
+        GiantRock existingCastleRock = combatState.CreateCard<GiantRock>(playerTwo);
+        await CardPileCmd.AddGeneratedCardToCombat(existingCastleRock, PileType.Discard, playerTwo);
+        await PlayPowerCard<RockCastle>(combatState, playerTwo, choiceContext, upgraded: false);
+        Require(existingCastleRock.BaseReplayCount == 1, "Rock Castle must grant Replay 1 to existing Giant Rocks");
+        GiantRock futureCastleRock = await CreateInHand<GiantRock>(combatState, playerTwo, upgraded: false);
+        Require(futureCastleRock.BaseReplayCount == 1, "Rock Castle must grant Replay 1 to future Giant Rocks");
+        int hpBeforeCastleRock = target.CurrentHp;
+        await Play(futureCastleRock, choiceContext, target);
+        Require(target.CurrentHp == hpBeforeCastleRock - 32, "a Giant Rock with Replay 1 must deal damage twice");
+
+        await PlayPowerCard<CreativeArtificialRock>(
+            combatState,
+            playerTwo,
+            choiceContext,
+            upgraded: true);
+        CreativeArtificialRockPower creativePower = RequirePower<CreativeArtificialRockPower>(playerTwo, 1);
+        creativePower.AmountOnTurnStart = creativePower.Amount;
+        int handBeforeCreativeRock = playerTwo.PlayerCombatState.Hand.Cards.Count;
+        await Hook.BeforeHandDraw(combatState, playerTwo, choiceContext);
+        CardModel generatedCreativeRock = playerTwo.PlayerCombatState.Hand.Cards
+            .Skip(handBeforeCreativeRock)
+            .Single();
+        Require(
+            generatedCreativeRock.Tags.Contains(RockTags.Rock) && generatedCreativeRock is not RockSlam,
+            "Creative Artificial Rock must generate one eligible Rock card");
+        await PowerCmd.Remove<RockCastlePower>(playerTwo.Creature);
+        await PowerCmd.Remove<CreativeArtificialRockPower>(playerTwo.Creature);
+        await RemoveAllCombatCards(playerTwo);
+
         int hpBeforeSlam = target.CurrentHp;
-        BodySlam rockSlam = await CreateInHand<BodySlam>(combatState, playerOne, upgraded: false);
+        RockSlam rockSlam = await CreateInHand<RockSlam>(combatState, playerOne, upgraded: false);
         int discardPreviewCallsBeforeSlam = _generatedDiscardPreviewCalls;
         await Play(rockSlam, choiceContext, target);
         Require(target.CurrentHp == hpBeforeSlam - 5, "Rock Slam must deal exactly 5 damage");
@@ -323,14 +381,14 @@ internal static class FullGameIntegrationSelfTest
             "Rock Charge next-turn Power must remove itself after triggering");
         await RemoveAllCombatCards(playerOne);
 
-        await PlayPowerCard<StoneArmor>(combatState, playerOne, choiceContext, upgraded: false);
-        await PlayPowerCard<StoneArmor>(combatState, playerOne, choiceContext, upgraded: true);
-        await PlayPowerCard<Barricade>(combatState, playerOne, choiceContext, upgraded: false);
-        await PlayPowerCard<Barricade>(combatState, playerOne, choiceContext, upgraded: true);
-        await PlayPowerCard<Juggernaut>(combatState, playerOne, choiceContext, upgraded: false);
-        await PlayPowerCard<Juggernaut>(combatState, playerOne, choiceContext, upgraded: true);
-        await PlayPowerCard<DemonForm>(combatState, playerOne, choiceContext, upgraded: false);
-        await PlayPowerCard<DemonForm>(combatState, playerOne, choiceContext, upgraded: true);
+        await PlayPowerCard<RockArmor>(combatState, playerOne, choiceContext, upgraded: false);
+        await PlayPowerCard<RockArmor>(combatState, playerOne, choiceContext, upgraded: true);
+        await PlayPowerCard<Rockade>(combatState, playerOne, choiceContext, upgraded: false);
+        await PlayPowerCard<Rockade>(combatState, playerOne, choiceContext, upgraded: true);
+        await PlayPowerCard<AbsoluteRock>(combatState, playerOne, choiceContext, upgraded: false);
+        await PlayPowerCard<AbsoluteRock>(combatState, playerOne, choiceContext, upgraded: true);
+        await PlayPowerCard<RockForm>(combatState, playerOne, choiceContext, upgraded: false);
+        await PlayPowerCard<RockForm>(combatState, playerOne, choiceContext, upgraded: true);
         await RemoveAllCombatCards(playerOne);
 
         RockArmorPower rockArmor = RequirePower<RockArmorPower>(playerOne, 10);
@@ -361,7 +419,7 @@ internal static class FullGameIntegrationSelfTest
 
         int blockBeforeSecondSlam = playerOne.Creature.Block;
         int hpBeforeSecondSlam = target.CurrentHp;
-        BodySlam secondRockSlam = await CreateInHand<BodySlam>(combatState, playerOne, upgraded: true);
+        RockSlam secondRockSlam = await CreateInHand<RockSlam>(combatState, playerOne, upgraded: true);
         await Play(secondRockSlam, choiceContext, target);
         Require(target.CurrentHp == hpBeforeSecondSlam - 5, "upgraded Rock Slam must still deal exactly 5 damage");
         Require(playerOne.Creature.Block == blockBeforeSecondSlam, "Rock Armor must not trigger for Rock Slam");
@@ -396,8 +454,8 @@ internal static class FullGameIntegrationSelfTest
         Require(generatedRocks.Count(card => card.IsUpgraded) == 1, "mixed Rock Form must generate one Giant Rock+");
         Require(generatedRocks.Count(card => !card.IsUpgraded) == 1, "mixed Rock Form must generate one normal Giant Rock");
 
-        BodySlam discountedRock = await CreateInHand<BodySlam>(combatState, playerOne, upgraded: false);
-        BodySlam otherPlayersRock = await CreateInHand<BodySlam>(combatState, playerTwo, upgraded: false);
+        RockSlam discountedRock = await CreateInHand<RockSlam>(combatState, playerOne, upgraded: false);
+        RockSlam otherPlayersRock = await CreateInHand<RockSlam>(combatState, playerTwo, upgraded: false);
         Require(
             discountedRock.EnergyCost.GetWithModifiers(CostModifiers.All) == 0,
             "two Rock Form stacks must reduce an owned Rock card to zero");
@@ -431,15 +489,19 @@ internal static class FullGameIntegrationSelfTest
 
     private static void AddTestCardsToDeck(RunState runState, Player player)
     {
-        player.Deck.AddInternal(runState.CreateCard<Barricade>(player));
-        player.Deck.AddInternal(runState.CreateCard<DemonForm>(player));
-        player.Deck.AddInternal(runState.CreateCard<StoneArmor>(player));
-        player.Deck.AddInternal(runState.CreateCard<Juggernaut>(player));
-        player.Deck.AddInternal(runState.CreateCard<BodySlam>(player));
+        player.Deck.AddInternal(runState.CreateCard<Rockade>(player));
+        player.Deck.AddInternal(runState.CreateCard<RockForm>(player));
+        player.Deck.AddInternal(runState.CreateCard<RockArmor>(player));
+        player.Deck.AddInternal(runState.CreateCard<AbsoluteRock>(player));
+        player.Deck.AddInternal(runState.CreateCard<RockSlam>(player));
         player.Deck.AddInternal(runState.CreateCard<HiddenRock>(player));
         player.Deck.AddInternal(runState.CreateCard<InevitableRock>(player));
         player.Deck.AddInternal(runState.CreateCard<RockFive>(player));
         player.Deck.AddInternal(runState.CreateCard<RockCharge>(player));
+        player.Deck.AddInternal(runState.CreateCard<RockTrap>(player));
+        player.Deck.AddInternal(runState.CreateCard<AllForRock>(player));
+        player.Deck.AddInternal(runState.CreateCard<CreativeArtificialRock>(player));
+        player.Deck.AddInternal(runState.CreateCard<RockCastle>(player));
     }
 
     private static void ValidateRunSaveRoundTrip(RunState runState, Player player)
@@ -449,15 +511,19 @@ internal static class FullGameIntegrationSelfTest
         Player restoredPlayer = restored.Players.Single(candidate => candidate.NetId == player.NetId);
         Type[] cardTypes =
         [
-            typeof(Barricade),
-            typeof(DemonForm),
-            typeof(StoneArmor),
-            typeof(Juggernaut),
-            typeof(BodySlam),
+            typeof(Rockade),
+            typeof(RockForm),
+            typeof(RockArmor),
+            typeof(AbsoluteRock),
+            typeof(RockSlam),
             typeof(HiddenRock),
             typeof(InevitableRock),
             typeof(RockFive),
             typeof(RockCharge),
+            typeof(RockTrap),
+            typeof(AllForRock),
+            typeof(CreativeArtificialRock),
+            typeof(RockCastle),
         ];
         foreach (Type cardType in cardTypes)
         {
@@ -589,11 +655,11 @@ internal static class FullGameIntegrationSelfTest
         await RemoveAllCombatCards(player);
         CardModel[] cards =
         [
-            await CreateInHand<Barricade>(combatState, player, upgraded: false),
-            await CreateInHand<DemonForm>(combatState, player, upgraded: false),
-            await CreateInHand<StoneArmor>(combatState, player, upgraded: false),
-            await CreateInHand<Juggernaut>(combatState, player, upgraded: false),
-            await CreateInHand<BodySlam>(combatState, player, upgraded: false),
+            await CreateInHand<Rockade>(combatState, player, upgraded: false),
+            await CreateInHand<RockForm>(combatState, player, upgraded: false),
+            await CreateInHand<RockArmor>(combatState, player, upgraded: false),
+            await CreateInHand<AbsoluteRock>(combatState, player, upgraded: false),
+            await CreateInHand<RockSlam>(combatState, player, upgraded: false),
             await CreateInHand<HiddenRock>(combatState, player, upgraded: false),
             await CreateInHand<InevitableRock>(combatState, player, upgraded: false),
             await CreateInHand<RockFive>(combatState, player, upgraded: false),
@@ -647,11 +713,11 @@ internal static class FullGameIntegrationSelfTest
         await RemoveAllCombatCards(player);
         CardModel[] upgradedCards =
         [
-            await CreateInHand<Barricade>(combatState, player, upgraded: true),
-            await CreateInHand<DemonForm>(combatState, player, upgraded: true),
-            await CreateInHand<StoneArmor>(combatState, player, upgraded: true),
-            await CreateInHand<Juggernaut>(combatState, player, upgraded: true),
-            await CreateInHand<BodySlam>(combatState, player, upgraded: true),
+            await CreateInHand<Rockade>(combatState, player, upgraded: true),
+            await CreateInHand<RockForm>(combatState, player, upgraded: true),
+            await CreateInHand<RockArmor>(combatState, player, upgraded: true),
+            await CreateInHand<AbsoluteRock>(combatState, player, upgraded: true),
+            await CreateInHand<RockSlam>(combatState, player, upgraded: true),
             await CreateInHand<HiddenRock>(combatState, player, upgraded: true),
             await CreateInHand<InevitableRock>(combatState, player, upgraded: true),
             await CreateInHand<RockFive>(combatState, player, upgraded: true),

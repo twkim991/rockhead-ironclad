@@ -1,6 +1,8 @@
 using HarmonyLib;
 using Godot;
+using MegaCrit.Sts2.Core.Achievements;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
@@ -8,16 +10,22 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Models.PotionPools;
 using MegaCrit.Sts2.Core.Models.RelicPools;
+using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Runs;
 #if THROW_ROCK_GAME_0_109
 using MegaCrit.Sts2.Core.Multiplayer.Serialization;
 #endif
 using MegaCrit.Sts2.Core.Unlocks;
 using MegaCrit.Sts2.Core.ValueProps;
+using ThrowRockIronclad.ThrowRockIroncladCode.CardPools;
 using ThrowRockIronclad.ThrowRockIroncladCode.Cards;
+using ThrowRockIronclad.ThrowRockIroncladCode.Characters;
 using ThrowRockIronclad.ThrowRockIroncladCode.Core;
 using ThrowRockIronclad.ThrowRockIroncladCode.Patches.Presentation;
 using ThrowRockIronclad.ThrowRockIroncladCode.Powers;
+using ThrowRockIronclad.ThrowRockIroncladCode.RelicPools;
 using ThrowRockIronclad.ThrowRockIroncladCode.Relics;
 
 namespace ThrowRockIronclad.ThrowRockIroncladCode.Compatibility;
@@ -39,6 +47,8 @@ public static class RuntimeContentDiagnosticsPatch
             ModelDb.Power<RockArmorPower>(),
             ModelDb.Power<AbsoluteRockPower>(),
             ModelDb.Power<RockChargeNextTurnPower>(),
+            ModelDb.Power<CreativeArtificialRockPower>(),
+            ModelDb.Power<RockCastlePower>(),
         ];
 
         foreach (ThrowRockIroncladPower power in powers)
@@ -61,24 +71,28 @@ public static class RuntimeContentDiagnosticsPatch
         }
 
         Require(
-            powers.Select(power => power.CustomPackedIconPath).Distinct().Count() == powers.Length,
-            "each Rock power must have a distinct small icon");
+            powers.Take(5).Select(power => power.CustomPackedIconPath).Distinct().Count() == 5,
+            "the original five Rock powers must retain distinct small icons");
         Require(
-            powers.Select(power => power.CustomBigIconPath).Distinct().Count() == powers.Length,
-            "each Rock power must have a distinct large icon");
+            powers.Take(5).Select(power => power.CustomBigIconPath).Distinct().Count() == 5,
+            "the original five Rock powers must retain distinct large icons");
 
         CardModel[] rockCards =
         [
-            ModelDb.Card<Barricade>(),
-            ModelDb.Card<DemonForm>(),
-            ModelDb.Card<StoneArmor>(),
-            ModelDb.Card<Juggernaut>(),
-            ModelDb.Card<BodySlam>(),
+            ModelDb.Card<Rockade>(),
+            ModelDb.Card<RockForm>(),
+            ModelDb.Card<RockArmor>(),
+            ModelDb.Card<AbsoluteRock>(),
+            ModelDb.Card<RockSlam>(),
             ModelDb.Card<GiantRock>(),
             ModelDb.Card<HiddenRock>(),
             ModelDb.Card<InevitableRock>(),
             ModelDb.Card<RockFive>(),
             ModelDb.Card<RockCharge>(),
+            ModelDb.Card<RockTrap>(),
+            ModelDb.Card<AllForRock>(),
+            ModelDb.Card<CreativeArtificialRock>(),
+            ModelDb.Card<RockCastle>(),
         ];
 
         Require(RockTags.RockValue == 1_059_034_496, "stable Rock tag value changed");
@@ -88,31 +102,130 @@ public static class RuntimeContentDiagnosticsPatch
             Require(card.Tags.Contains(RockTags.Rock), $"Rock tag missing from {card.GetType().Name}");
         }
 
-        Require(!ModelDb.Card<PrimalForce>().Tags.Contains(RockTags.Rock), "PrimalForce must not have the Rock tag");
-        Require(ModelDb.Card<BodySlam>().CanonicalKeywords.Contains(CardKeyword.Exhaust), "Rock Slam must have Exhaust");
-
-        ThrowRockIroncladCard[] newCards =
+        CardModel[] vanillaCards =
         [
+            ModelDb.Card<Barricade>(),
+            ModelDb.Card<DemonForm>(),
+            ModelDb.Card<StoneArmor>(),
+            ModelDb.Card<Juggernaut>(),
+            ModelDb.Card<BodySlam>(),
+        ];
+
+        foreach (CardModel card in vanillaCards)
+        {
+            Require(!card.Tags.Contains(RockTags.Rock), $"Vanilla card was modified: {card.GetType().Name}");
+        }
+
+        Require(!ModelDb.Card<PrimalForce>().Tags.Contains(RockTags.Rock), "PrimalForce must not have the Rock tag");
+        Require(ModelDb.Card<RockSlam>().CanonicalKeywords.Contains(CardKeyword.Exhaust), "Rock Slam must have Exhaust");
+        Require(!ModelDb.Card<BodySlam>().CanonicalKeywords.Contains(CardKeyword.Exhaust), "Body Slam must remain vanilla");
+
+        ThrowRockIroncladCard[] rockcladCards =
+        [
+            ModelDb.Card<Rockade>(),
+            ModelDb.Card<RockForm>(),
+            ModelDb.Card<RockArmor>(),
+            ModelDb.Card<AbsoluteRock>(),
+            ModelDb.Card<RockSlam>(),
             ModelDb.Card<HiddenRock>(),
             ModelDb.Card<InevitableRock>(),
             ModelDb.Card<RockFive>(),
             ModelDb.Card<RockCharge>(),
+            ModelDb.Card<RockTrap>(),
+            ModelDb.Card<AllForRock>(),
+            ModelDb.Card<CreativeArtificialRock>(),
+            ModelDb.Card<RockCastle>(),
         ];
 
+        RockcladCardPool rockcladCardPool = ModelDb.CardPool<RockcladCardPool>();
+        HashSet<ModelId> rockcladCardIds = rockcladCardPool.AllCardIds.ToHashSet();
+        HashSet<ModelId> rockcladRewardCardIds = rockcladCardPool
+            .GetUnlockedCards(UnlockState.all, CardMultiplayerConstraint.None)
+            .Select(card => card.Id)
+            .ToHashSet();
         HashSet<ModelId> ironcladCardIds = ModelDb.CardPool<IroncladCardPool>().AllCardIds.ToHashSet();
-        foreach (ThrowRockIroncladCard card in newCards)
+        foreach (ThrowRockIroncladCard card in rockcladCards)
         {
             string expectedCardId = RockPowerModelPatch.GetExpectedEntry(card.GetType());
             Require(
                 card.Id.Entry == expectedCardId,
                 $"stable card ID changed for {card.GetType().Name}: actual={card.Id.Entry}, expected={expectedCardId}");
-            Require(ironcladCardIds.Contains(card.Id), $"{card.GetType().Name} is missing from the Ironclad card pool");
+            Require(!ironcladCardIds.Contains(card.Id), $"{card.GetType().Name} leaked into the Ironclad card pool");
+            Require(rockcladCardIds.Contains(card.Id), $"{card.GetType().Name} is missing from the Rockclad card pool");
+
+            if (card is RockSlam)
+            {
+                Require(
+                    !rockcladRewardCardIds.Contains(card.Id),
+                    "Rock Slam must be starter-only and absent from the Rockclad reward pool");
+            }
+            else
+            {
+                Require(
+                    rockcladRewardCardIds.Contains(card.Id),
+                    $"{card.GetType().Name} is missing from the Rockclad reward pool");
+            }
         }
 
+        Require(rockcladCards.Length == 13, "Rockclad must have exactly thirteen custom cards");
+        Require(
+            rockcladCardIds.Count == 69 && rockcladRewardCardIds.Count == 68,
+            "Rockclad reward pool must contain twelve custom cards and 56 requested Ironclad cards");
+        Require(ModelDb.Card<RockSlam>().Rarity == CardRarity.Common, "RockSlam must be Common");
+        Require(ModelDb.Card<RockArmor>().Rarity == CardRarity.Uncommon, "RockArmor must be Uncommon");
+        Require(ModelDb.Card<Rockade>().Rarity == CardRarity.Rare, "Rockade must be Rare");
         Require(ModelDb.Card<HiddenRock>().Rarity == CardRarity.Uncommon, "HiddenRock must be Uncommon");
         Require(ModelDb.Card<InevitableRock>().Rarity == CardRarity.Common, "InevitableRock must be Common");
         Require(ModelDb.Card<RockFive>().Rarity == CardRarity.Uncommon, "RockFive must be Uncommon");
         Require(ModelDb.Card<RockCharge>().Rarity == CardRarity.Common, "RockCharge must be Common");
+        Require(ModelDb.Card<RockTrap>().Rarity == CardRarity.Rare, "RockTrap must be Rare");
+        Require(ModelDb.Card<AllForRock>().Rarity == CardRarity.Rare, "AllForRock must be Rare");
+        Require(
+            ModelDb.Card<CreativeArtificialRock>().Rarity == CardRarity.Rare,
+            "CreativeArtificialRock must be Rare");
+        Require(ModelDb.Card<RockCastle>().Rarity == CardRarity.Rare, "RockCastle must be Rare");
+        Require(ModelDb.Card<Corruption>().Rarity == CardRarity.Ancient, "Corruption must remain Ancient");
+        Require(
+            ModelDb.Card<DemonicShield>().MultiplayerConstraint == CardMultiplayerConstraint.MultiplayerOnly
+                && ModelDb.Card<Tank>().MultiplayerConstraint == CardMultiplayerConstraint.MultiplayerOnly,
+            "Demonic Shield and Tank must remain multiplayer-only");
+
+        HashSet<ModelId> singleplayerCardIds = ModelDb.CardPool<RockcladCardPool>()
+            .GetUnlockedCards(UnlockState.all, CardMultiplayerConstraint.SingleplayerOnly)
+            .Select(card => card.Id)
+            .ToHashSet();
+        Require(
+            !singleplayerCardIds.Contains(ModelDb.Card<DemonicShield>().Id)
+                && !singleplayerCardIds.Contains(ModelDb.Card<Tank>().Id),
+            "multiplayer-only cards leaked into Rockclad's singleplayer pool");
+
+        Rockclad rockclad = ModelDb.Character<Rockclad>();
+        Ironclad ironclad = ModelDb.Character<Ironclad>();
+        Require(
+            rockclad.Id.Entry == RockPowerModelPatch.GetExpectedEntry(typeof(Rockclad)),
+            $"stable character ID changed: {rockclad.Id.Entry}");
+        Require(ModelDb.AllCharacters.Contains(rockclad), "Rockclad is missing from ModelDb.AllCharacters");
+        Require(rockclad.CardPool is RockcladCardPool, "Rockclad has the wrong card pool");
+        Require(rockclad.RelicPool is RockcladRelicPool, "Rockclad has the wrong relic pool");
+        Require(rockclad.PotionPool is IroncladPotionPool, "Rockclad must reuse the Ironclad potion pool");
+        CardModel[] rockcladStartingDeck = rockclad.StartingDeck.ToArray();
+        Require(
+            rockcladStartingDeck.Length == 10
+                && rockcladStartingDeck.Count(card => card is StrikeIronclad) == 5
+                && rockcladStartingDeck.Count(card => card is DefendIronclad) == 4
+                && rockcladStartingDeck.Count(card => card is RockSlam) == 1,
+            "Rockclad must start with five Ironclad Strikes, four Ironclad Defends, and one Rock Slam");
+        Require(
+            rockclad.StartingRelics.Count == 1 && rockclad.StartingRelics[0] is BurningBlood,
+            "Rockclad must start with Burning Blood");
+        Require(rockclad.Title.Exists(), "Rockclad title localization is missing");
+        Require(rockclad.AssetPaths.SequenceEqual(ironclad.AssetPaths), "Rockclad run assets must reuse Ironclad assets");
+        Require(
+            rockclad.AssetPathsCharacterSelect.SequenceEqual(ironclad.AssetPathsCharacterSelect),
+            "Rockclad character-select assets must reuse Ironclad assets");
+        Require(
+            rockclad.RunWonAchievement == Achievement.IroncladWin,
+            "Rockclad must reuse the Ironclad win achievement in the prototype");
 
         var rockRelic = ModelDb.Relic<Rock>();
         string expectedRelicId = RockPowerModelPatch.GetExpectedEntry(typeof(Rock));
@@ -121,8 +234,11 @@ public static class RuntimeContentDiagnosticsPatch
             $"stable relic ID changed for Rock: actual={rockRelic.Id.Entry}, expected={expectedRelicId}");
         Require(rockRelic.Rarity == RelicRarity.Uncommon, "Rock relic must be Uncommon");
         Require(
-            ModelDb.RelicPool<IroncladRelicPool>().AllRelicIds.Contains(rockRelic.Id),
-            "Rock relic is missing from the Ironclad relic pool");
+            ModelDb.RelicPool<RockcladRelicPool>().AllRelicIds.Contains(rockRelic.Id),
+            "Rock relic is missing from the Rockclad relic pool");
+        Require(
+            !ModelDb.RelicPool<IroncladRelicPool>().AllRelicIds.Contains(rockRelic.Id),
+            "Rock relic leaked into the Ironclad relic pool");
         Require(rockRelic.Title.Exists(), "Title localization missing for Rock relic");
         Require(rockRelic.DynamicDescription.Exists(), "Description localization missing for Rock relic");
         Require(rockRelic.Flavor.Exists(), "Flavor localization missing for Rock relic");
@@ -133,8 +249,7 @@ public static class RuntimeContentDiagnosticsPatch
 
         CardModel[] portraitCards =
         [
-            .. rockCards.Take(5),
-            .. newCards,
+            .. rockcladCards,
         ];
 
         foreach (CardModel card in portraitCards)
@@ -148,18 +263,43 @@ public static class RuntimeContentDiagnosticsPatch
         }
 
         ValidateIsolatedCombatHooks();
+        ValidateAscensionDeckRules();
         ValidateCardSaveRoundTrips();
         ValidateRelicSaveRoundTrip();
 
         MainFile.Logger.Info(
-            "Runtime content validation passed: 4 original Ironclad cards, 9 custom card portraits, "
-            + "5 powers with both icon sizes, 1 Ironclad relic, 10 Rock tags, localization, Exhaust, "
-            + "isolated two-player hooks, and card/relic save round-trips.");
+            "Runtime content validation passed: standalone Rockclad, 68-card reward pool, starter-only Rock Slam, 5 Strikes + 4 Defends + Rock Slam start, Burning Blood start, "
+            + "1 Rockclad relic, Ironclad presentation reuse, 7 powers with both icon sizes, 14 Rock tags, "
+            + "localization, isolated two-player hooks, and card/relic save round-trips.");
+    }
+
+    private static void ValidateAscensionDeckRules()
+    {
+        Player ascensionFourPlayer = Player.CreateForNewRun<Rockclad>(UnlockState.all, 40_004UL);
+        _ = RunState.CreateForTest(
+            players: [ascensionFourPlayer],
+            ascensionLevel: 4,
+            seed: "ROCKCLAD-A4");
+        new AscensionManager(4).ApplyEffectsTo(ascensionFourPlayer);
+        Require(
+            ascensionFourPlayer.Deck.Cards.Count(card => card is AscendersBane) == 0,
+            "Rockclad received Ascender's Bane below Ascension 5");
+
+        Player ascensionFivePlayer = Player.CreateForNewRun<Rockclad>(UnlockState.all, 50_005UL);
+        _ = RunState.CreateForTest(
+            players: [ascensionFivePlayer],
+            ascensionLevel: 5,
+            seed: "ROCKCLAD-A5");
+        new AscensionManager(5).ApplyEffectsTo(ascensionFivePlayer);
+        Require(
+            ascensionFivePlayer.Deck.Cards.Count(card => card is AscendersBane) == 1
+                && ascensionFivePlayer.Deck.Cards.Count == 11,
+            "Rockclad did not receive exactly one Ascender's Bane at Ascension 5");
     }
 
     private static void ValidateIsolatedCombatHooks()
     {
-        Player playerOne = Player.CreateForNewRun<Ironclad>(UnlockState.all, 10_001UL);
+        Player playerOne = Player.CreateForNewRun<Rockclad>(UnlockState.all, 10_001UL);
         Player playerTwo = Player.CreateForNewRun<Ironclad>(UnlockState.all, 10_002UL);
         playerOne.ResetCombatState();
         playerTwo.ResetCombatState();
@@ -223,15 +363,19 @@ public static class RuntimeContentDiagnosticsPatch
     {
         CardModel[] mutableCards =
         [
-            ModelDb.Card<Barricade>().ToMutable(),
-            ModelDb.Card<DemonForm>().ToMutable(),
-            ModelDb.Card<StoneArmor>().ToMutable(),
-            ModelDb.Card<Juggernaut>().ToMutable(),
-            ModelDb.Card<BodySlam>().ToMutable(),
+            ModelDb.Card<Rockade>().ToMutable(),
+            ModelDb.Card<RockForm>().ToMutable(),
+            ModelDb.Card<RockArmor>().ToMutable(),
+            ModelDb.Card<AbsoluteRock>().ToMutable(),
+            ModelDb.Card<RockSlam>().ToMutable(),
             ModelDb.Card<HiddenRock>().ToMutable(),
             ModelDb.Card<InevitableRock>().ToMutable(),
             ModelDb.Card<RockFive>().ToMutable(),
             ModelDb.Card<RockCharge>().ToMutable(),
+            ModelDb.Card<RockTrap>().ToMutable(),
+            ModelDb.Card<AllForRock>().ToMutable(),
+            ModelDb.Card<CreativeArtificialRock>().ToMutable(),
+            ModelDb.Card<RockCastle>().ToMutable(),
         ];
 
         foreach (CardModel card in mutableCards)

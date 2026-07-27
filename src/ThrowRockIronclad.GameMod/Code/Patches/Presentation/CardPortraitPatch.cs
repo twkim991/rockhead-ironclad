@@ -13,15 +13,19 @@ public static class CardPortraitPatch
 {
     public static string? GetPortraitFileName(CardModel card) => card switch
     {
-        Barricade => "rockade.png",
-        DemonForm => "rock_form.png",
-        StoneArmor => "rock_armor.png",
-        Juggernaut => "absolute_rock.png",
-        BodySlam => "rock_slam.png",
+        Rockade => "rockade.png",
+        RockForm => "rock_form.png",
+        RockArmor => "rock_armor.png",
+        AbsoluteRock => "absolute_rock.png",
+        RockSlam => "rock_slam.png",
         HiddenRock => "hidden_rock.png",
         InevitableRock => "inevitable_rock.png",
         RockFive => "rock_five.png",
         RockCharge => "rock_charge.png",
+        RockTrap => "hidden_rock.png",
+        AllForRock => "rock_five.png",
+        CreativeArtificialRock => "rock_form.png",
+        RockCastle => "rockade.png",
         _ => null,
     };
 

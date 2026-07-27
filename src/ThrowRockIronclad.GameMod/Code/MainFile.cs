@@ -2,12 +2,8 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Debug;
-using MegaCrit.Sts2.Core.Models.CardPools;
-using MegaCrit.Sts2.Core.Models.RelicPools;
-using ThrowRockIronclad.ThrowRockIroncladCode.Cards;
 using ThrowRockIronclad.ThrowRockIroncladCode.Compatibility;
 using ThrowRockIronclad.ThrowRockIroncladCode.Core;
-using ThrowRockIronclad.ThrowRockIroncladCode.Relics;
 
 namespace ThrowRockIronclad.ThrowRockIroncladCode;
 
@@ -30,12 +26,6 @@ public partial class MainFile : Node
         {
             Logger.Warn($"Game version {runningVersion} has not been validated. Expected {ModInfo.SupportedGameVersion}.");
         }
-
-        ModHelper.AddModelToPool<IroncladCardPool, HiddenRock>();
-        ModHelper.AddModelToPool<IroncladCardPool, InevitableRock>();
-        ModHelper.AddModelToPool<IroncladCardPool, RockFive>();
-        ModHelper.AddModelToPool<IroncladCardPool, RockCharge>();
-        ModHelper.AddModelToPool<IroncladRelicPool, Rock>();
 
         PatchCompatibilityDiagnostics.ValidateTargetsBeforePatching();
         Harmony harmony = new(ModId);
